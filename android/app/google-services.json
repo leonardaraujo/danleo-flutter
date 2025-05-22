@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "456288482132",
+    "project_id": "danleo",
+    "storage_bucket": "danleo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:456288482132:android:5bbdbb6ca14b120ef50ec1",
+        "android_client_info": {
+          "package_name": "com.example.danleo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeqo7QzbY4XxVeCMP8HWFAEIkxoPw9HxE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:456288482132:android:f0f7270e952c4ed5f50ec1",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeqo7QzbY4XxVeCMP8HWFAEIkxoPw9HxE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
