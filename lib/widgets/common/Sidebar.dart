@@ -60,21 +60,15 @@ class Sidebar extends StatelessWidget {
           const Divider(),
           _buildMenuItem(
             context: context,
-            icon: Icons.upload_file,
-            title: 'Carga Automática',
-            index: 1,
-          ),
-          _buildMenuItem(
-            context: context,
             icon: Icons.settings,
             title: 'Configuración',
-            index: 2,
+            index: 1,
           ),
           _buildMenuItem(
             context: context,
             icon: Icons.help,
             title: 'Ayuda',
-            index: 3,
+            index: 2,
           ),
         ],
       ),

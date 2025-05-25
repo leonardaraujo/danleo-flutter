@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/ProductService.dart';
+import '../cart/CartButton.dart';
 import 'ProductCard.dart';
 
 class ProductList extends StatefulWidget {
@@ -11,279 +12,279 @@ class ProductList extends StatefulWidget {
 
 class _ProductListState extends State<ProductList> {
   final ProductService _productService = ProductService();
+  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  
   List<Map<String, dynamic>> _products = [];
+  List<Map<String, dynamic>> _filteredProducts = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMoreData = true;
+  String _searchQuery = '';
+  
+  static const int _pageSize = 10;
+  int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
     _loadProducts();
+    _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchChanged);
   }
 
-  Future<void> _loadProducts() async {
-    setState(() {
-      _isLoading = true;
-    });
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
-    final products = await _productService.getProducts();
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore && _hasMoreData && _searchQuery.isEmpty) {
+        _loadMoreProducts();
+      }
+    }
+  }
+
+  void _onSearchChanged() {
     setState(() {
-      _products = products;
-      _isLoading = false;
+      _searchQuery = _searchController.text.toLowerCase();
+      _filterProducts();
     });
   }
 
-  Future<bool?> _confirmDelete(BuildContext context) async {
-    return showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Confirmar'),
-            content: const Text('¿Estás seguro de eliminar este producto?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancelar'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Eliminar'),
-              ),
-            ],
-          ),
-    );
+  void _filterProducts() {
+    if (_searchQuery.isEmpty) {
+      _filteredProducts = List.from(_products);
+    } else {
+      _filteredProducts = _products.where((product) {
+        final name = product['nombre']?.toString().toLowerCase() ?? '';
+        final description = product['descripcion']?.toString().toLowerCase() ?? '';
+        return name.contains(_searchQuery) || description.contains(_searchQuery);
+      }).toList();
+    }
+  }
+
+  Future<void> _loadProducts({bool isRefresh = false}) async {
+    if (isRefresh) {
+      setState(() {
+        _isLoading = true;
+        _currentPage = 0;
+        _products.clear();
+        _filteredProducts.clear();
+        _hasMoreData = true;
+      });
+      _productService.resetPagination();
+    } else {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    try {
+      final products = await _productService.getProductsPaginated(_currentPage, _pageSize);
+      
+      setState(() {
+        if (isRefresh) {
+          _products = products;
+        } else {
+          _products.addAll(products);
+        }
+        
+        _hasMoreData = products.length == _pageSize;
+        _filterProducts();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar productos: $e')),
+      );
+    }
+  }
+
+  Future<void> _loadMoreProducts() async {
+    if (_isLoadingMore || !_hasMoreData) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      _currentPage++;
+      final newProducts = await _productService.getProductsPaginated(_currentPage, _pageSize);
+      
+      setState(() {
+        _products.addAll(newProducts);
+        _hasMoreData = newProducts.length == _pageSize;
+        _filterProducts();
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingMore = false;
+        _currentPage--;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar más productos: $e')),
+      );
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    await _loadProducts(isRefresh: true);
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    FocusScope.of(context).unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _products.isEmpty
-              ? const Center(child: Text('No hay productos disponibles'))
-              : Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.7,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: _products.length,
-                  itemBuilder: (context, index) {
-                    final product = _products[index];
-                    return ProductCard(
-                      product: product,
-                      onEdit: () => _showProductForm(context, product),
-                      onDelete: () async {
-                        final shouldDelete = await _confirmDelete(context);
-                        if (shouldDelete == true) {
-                          await _productService.deleteProduct(product['id']);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Producto ${product['nombre']} eliminado',
-                              ),
-                            ),
-                          );
-                          _loadProducts();
-                        }
-                      },
-                    );
-                  },
+      appBar: AppBar(
+        title: const Text('Productos'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        actions: const [
+          CartButton(),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Barra de búsqueda
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar productos...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: _clearSearch,
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+            ),
+          ),
+          
+          // Contador de resultados
+          if (_searchQuery.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                '${_filteredProducts.length} resultado${_filteredProducts.length != 1 ? 's' : ''} encontrado${_filteredProducts.length != 1 ? 's' : ''}',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
                 ),
               ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showProductForm(context);
-        },
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  Future<void> _showProductForm(
-    BuildContext context, [
-    Map<String, dynamic>? product,
-  ]) async {
-    final bool isEditing = product != null;
-    final TextEditingController nameController = TextEditingController(
-      text: isEditing ? product['nombre'] : '',
-    );
-    final TextEditingController priceController = TextEditingController(
-      text: isEditing ? product['precio'].toString() : '',
-    );
-    final TextEditingController descriptionController = TextEditingController(
-      text: isEditing ? product['descripcion'] : '',
-    );
-    final TextEditingController urlImageController = TextEditingController(
-      text: isEditing ? product['urlImagen'] : '',
-    );
-
-    final formKey = GlobalKey<FormState>();
-    String? errorMessage;
-
-    await showDialog(
-      context: context,
-      builder:
-          (context) => StatefulBuilder(
-            builder: (context, setState) {
-              return AlertDialog(
-                title: Text(isEditing ? 'Editar Producto' : 'Añadir Producto'),
-                content: SingleChildScrollView(
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextFormField(
-                          controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Nombre',
-                            border: OutlineInputBorder(),
-                          ),
+            ),
+          
+          // Lista de productos
+          Expanded(
+            child: _isLoading && _products.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredProducts.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _searchQuery.isNotEmpty 
+                                  ? Icons.search_off 
+                                  : Icons.shopping_bag_outlined,
+                              size: 80,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? 'No se encontraron productos con "$_searchQuery"'
+                                  : 'No hay productos disponibles',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (_searchQuery.isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _clearSearch,
+                                child: const Text('Limpiar búsqueda'),
+                              ),
+                            ],
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: priceController,
-                          decoration: const InputDecoration(
-                            labelText: 'Precio',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: descriptionController,
-                          decoration: const InputDecoration(
-                            labelText: 'Descripción',
-                            border: OutlineInputBorder(),
-                          ),
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: urlImageController,
-                          decoration: const InputDecoration(
-                            labelText: 'URL de imagen',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        if (urlImageController.text.isNotEmpty)
-                          Image.network(
-                            urlImageController.text,
-                            height: 100,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const SizedBox(
-                                height: 100,
-                                child: Center(
-                                  child: Text('URL de imagen inválida'),
-                                ),
-                              );
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _onRefresh,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: GridView.builder(
+                            controller: _scrollController,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.7,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                            ),
+                            itemCount: _filteredProducts.length + (_isLoadingMore ? 2 : 0),
+                            itemBuilder: (context, index) {
+                              if (index >= _filteredProducts.length) {
+                                return const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              }
+                              
+                              final product = _filteredProducts[index];
+                              return ProductCard(product: product);
                             },
                           ),
-                        if (errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16),
-                            child: Text(
-                              errorMessage!,
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Cancelar'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        final name = nameController.text;
-                        final price =
-                            double.tryParse(priceController.text) ?? 0;
-                        final description = descriptionController.text;
-                        final urlImage = urlImageController.text;
-
-                        final validation = _productService.validateProduct(
-                          name,
-                          price,
-                          description,
-                          urlImage,
-                        );
-
-                        if (validation != null) {
-                          setState(() {
-                            errorMessage = validation;
-                          });
-                          return;
-                        }
-
-                        if (isEditing) {
-                          final success = await _productService.updateProduct(
-                            product['id'],
-                            name,
-                            price,
-                            description,
-                            urlImage,
-                          );
-
-                          if (success) {
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Producto actualizado correctamente',
-                                ),
-                              ),
-                            );
-                            _loadProducts();
-                          } else {
-                            setState(() {
-                              errorMessage = 'Error al actualizar el producto';
-                            });
-                          }
-                        } else {
-                          final result = await _productService.createProduct(
-                            name,
-                            price,
-                            description,
-                            urlImage,
-                          );
-
-                          if (result.startsWith('Error')) {
-                            setState(() {
-                              errorMessage = result;
-                            });
-                          } else {
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Producto creado correctamente'),
-                              ),
-                            );
-                            _loadProducts();
-                          }
-                        }
-                      } catch (e) {
-                        setState(() {
-                          errorMessage = 'Error: $e';
-                        });
-                      }
-                    },
-                    child: Text(isEditing ? 'Actualizar' : 'Añadir'),
-                  ),
-                ],
-              );
-            },
+                        ),
+                      ),
           ),
+        ],
+      ),
     );
   }
 }

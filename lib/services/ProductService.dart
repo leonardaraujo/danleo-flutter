@@ -9,6 +9,9 @@ class ProductService {
   final RegExp _nameRegex = RegExp(r'^[a-zA-Z0-9 ]+$');
   final RegExp _urlRegex = RegExp(r'^https?:\/\/.*\.(jpeg|jpg|gif|png)(\?.*)?$', caseSensitive: false);
 
+  // Variable para almacenar el último documento para paginación
+  DocumentSnapshot? _lastDocument;
+
   // Validar producto
   String? validateProduct(String name, double price, String description, String urlImage) {
     if (name.isEmpty) {
@@ -64,7 +67,47 @@ class ProductService {
     }
   }
 
-  // Obtener todos los productos
+  // Obtener productos con paginación usando cursores de Firestore
+  Future<List<Map<String, dynamic>>> getProductsPaginated(int page, int pageSize) async {
+    try {
+      Query query = _productsCollection
+          .orderBy('createdAt', descending: true)
+          .limit(pageSize);
+      
+      // Si es la primera página, resetear el cursor
+      if (page == 0) {
+        _lastDocument = null;
+      }
+      
+      // Si hay un documento anterior y no es la primera página, usar startAfterDocument
+      if (_lastDocument != null && page > 0) {
+        query = query.startAfterDocument(_lastDocument!);
+      }
+      
+      QuerySnapshot querySnapshot = await query.get();
+      
+      // Actualizar el último documento para la próxima página
+      if (querySnapshot.docs.isNotEmpty) {
+        _lastDocument = querySnapshot.docs.last;
+      }
+      
+      return querySnapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      print('Error al obtener productos paginados: $e');
+      return [];
+    }
+  }
+
+  // Método para resetear la paginación (útil para refresh)
+  void resetPagination() {
+    _lastDocument = null;
+  }
+
+  // Obtener todos los productos (mantener para compatibilidad)
   Future<List<Map<String, dynamic>>> getProducts() async {
     try {
       QuerySnapshot querySnapshot = await _productsCollection.orderBy('createdAt', descending: true).get();
@@ -76,6 +119,29 @@ class ProductService {
       }).toList();
     } catch (e) {
       print('Error al obtener productos: $e');
+      return [];
+    }
+  }
+
+  // Buscar productos por nombre
+  Future<List<Map<String, dynamic>>> searchProducts(String searchTerm) async {
+    try {
+      // Convertir a minúsculas para búsqueda insensible a mayúsculas
+      String searchLower = searchTerm.toLowerCase();
+      
+      QuerySnapshot querySnapshot = await _productsCollection
+          .orderBy('nombre')
+          .where('nombre', isGreaterThanOrEqualTo: searchLower)
+          .where('nombre', isLessThanOrEqualTo: searchLower + '\uf8ff')
+          .get();
+      
+      return querySnapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      print('Error al buscar productos: $e');
       return [];
     }
   }
