@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'widgets/product/productList.dart';
 import 'widgets/common/Sidebar.dart';
 import 'utils/AutoUpload.dart';
+import 'widgets/store/store_map_screen.dart'; // ✅ Importación del mapa
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,31 +42,26 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _selectedIndex = index;
     });
-    print('Seleccionado índice: $index'); // Añadido para depuración
+    print('Seleccionado índice: $index');
   }
 
   @override
   Widget build(BuildContext context) {
-    // Lista de widgets que representan las diferentes pantallas
     final List<Widget> screens = [
       const ProductList(),
-      const AutoUpload(), // Asegúrate de que este es el componente correcto
+      const AutoUpload(),
       const Center(child: Text('Configuración')),
       const Center(child: Text('Ayuda')),
+      const StoreMapScreen(), // ✅ Pantalla "Ubícanos" en índice 4
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_getTitleByIndex(_selectedIndex)),
-      ),
+      appBar: AppBar(title: Text(_getTitleByIndex(_selectedIndex))),
       drawer: Sidebar(
         selectedIndex: _selectedIndex,
         onItemSelected: _onItemSelected,
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: screens),
     );
   }
 
@@ -79,6 +75,8 @@ class _MainScreenState extends State<MainScreen> {
         return 'Configuración';
       case 3:
         return 'Ayuda';
+      case 4:
+        return 'Ubícanos'; // ✅ Nuevo título
       default:
         return 'Danleo';
     }

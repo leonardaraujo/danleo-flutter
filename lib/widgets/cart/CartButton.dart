@@ -3,7 +3,7 @@ import "../../services/cartService.dart";
 import 'CartPage.dart';
 
 class CartButton extends StatelessWidget {
-  const CartButton({Key? key}) : super(key: key);
+  const CartButton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +12,7 @@ class CartButton extends StatelessWidget {
       builder: (context, child) {
         final cartService = CartService();
         final itemCount = cartService.totalQuantity;
-        
+
         return Stack(
           children: [
             IconButton(
@@ -20,9 +20,7 @@ class CartButton extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const CartPage(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const CartPage()),
                 );
               },
             ),
