@@ -4,7 +4,7 @@ import '../cart/CartButton.dart';
 import 'ProductCard.dart';
 
 class ProductList extends StatefulWidget {
-  const ProductList({Key? key}) : super(key: key);
+  const ProductList({super.key});
 
   @override
   State<ProductList> createState() => _ProductListState();
@@ -14,14 +14,14 @@ class _ProductListState extends State<ProductList> {
   final ProductService _productService = ProductService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   List<Map<String, dynamic>> _products = [];
   List<Map<String, dynamic>> _filteredProducts = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMoreData = true;
   String _searchQuery = '';
-  
+
   static const int _pageSize = 10;
   int _currentPage = 0;
 
@@ -41,7 +41,8 @@ class _ProductListState extends State<ProductList> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       if (!_isLoadingMore && _hasMoreData && _searchQuery.isEmpty) {
         _loadMoreProducts();
       }
@@ -59,11 +60,14 @@ class _ProductListState extends State<ProductList> {
     if (_searchQuery.isEmpty) {
       _filteredProducts = List.from(_products);
     } else {
-      _filteredProducts = _products.where((product) {
-        final name = product['nombre']?.toString().toLowerCase() ?? '';
-        final description = product['descripcion']?.toString().toLowerCase() ?? '';
-        return name.contains(_searchQuery) || description.contains(_searchQuery);
-      }).toList();
+      _filteredProducts =
+          _products.where((product) {
+            final name = product['nombre']?.toString().toLowerCase() ?? '';
+            final description =
+                product['descripcion']?.toString().toLowerCase() ?? '';
+            return name.contains(_searchQuery) ||
+                description.contains(_searchQuery);
+          }).toList();
     }
   }
 
@@ -84,15 +88,18 @@ class _ProductListState extends State<ProductList> {
     }
 
     try {
-      final products = await _productService.getProductsPaginated(_currentPage, _pageSize);
-      
+      final products = await _productService.getProductsPaginated(
+        _currentPage,
+        _pageSize,
+      );
+
       setState(() {
         if (isRefresh) {
           _products = products;
         } else {
           _products.addAll(products);
         }
-        
+
         _hasMoreData = products.length == _pageSize;
         _filterProducts();
         _isLoading = false;
@@ -101,9 +108,9 @@ class _ProductListState extends State<ProductList> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar productos: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al cargar productos: $e')));
     }
   }
 
@@ -116,8 +123,11 @@ class _ProductListState extends State<ProductList> {
 
     try {
       _currentPage++;
-      final newProducts = await _productService.getProductsPaginated(_currentPage, _pageSize);
-      
+      final newProducts = await _productService.getProductsPaginated(
+        _currentPage,
+        _pageSize,
+      );
+
       setState(() {
         _products.addAll(newProducts);
         _hasMoreData = newProducts.length == _pageSize;
@@ -152,9 +162,7 @@ class _ProductListState extends State<ProductList> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
-        actions: const [
-          CartButton(),
-        ],
+        actions: const [CartButton()],
       ),
       body: Column(
         children: [
@@ -177,12 +185,13 @@ class _ProductListState extends State<ProductList> {
               decoration: InputDecoration(
                 hintText: 'Buscar productos...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: _clearSearch,
-                      )
-                    : null,
+                suffixIcon:
+                    _searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: _clearSearch,
+                        )
+                        : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -200,7 +209,7 @@ class _ProductListState extends State<ProductList> {
               ),
             ),
           ),
-          
+
           // Contador de resultados
           if (_searchQuery.isNotEmpty)
             Container(
@@ -208,80 +217,81 @@ class _ProductListState extends State<ProductList> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 '${_filteredProducts.length} resultado${_filteredProducts.length != 1 ? 's' : ''} encontrado${_filteredProducts.length != 1 ? 's' : ''}',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               ),
             ),
-          
+
           // Lista de productos
           Expanded(
-            child: _isLoading && _products.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredProducts.isEmpty
+            child:
+                _isLoading && _products.isEmpty
+                    ? const Center(child: CircularProgressIndicator())
+                    : _filteredProducts.isEmpty
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _searchQuery.isNotEmpty 
-                                  ? Icons.search_off 
-                                  : Icons.shopping_bag_outlined,
-                              size: 80,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _searchQuery.isNotEmpty
+                                ? Icons.search_off
+                                : Icons.shopping_bag_outlined,
+                            size: 80,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchQuery.isNotEmpty
+                                ? 'No se encontraron productos con "$_searchQuery"'
+                                : 'No hay productos disponibles',
+                            style: const TextStyle(
+                              fontSize: 18,
                               color: Colors.grey,
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'No se encontraron productos con "$_searchQuery"'
-                                  : 'No hay productos disponibles',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            if (_searchQuery.isNotEmpty) ...[
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _clearSearch,
-                                child: const Text('Limpiar búsqueda'),
-                              ),
-                            ],
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _onRefresh,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: GridView.builder(
-                            controller: _scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.7,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                            ),
-                            itemCount: _filteredProducts.length + (_isLoadingMore ? 2 : 0),
-                            itemBuilder: (context, index) {
-                              if (index >= _filteredProducts.length) {
-                                return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16.0),
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                              }
-                              
-                              final product = _filteredProducts[index];
-                              return ProductCard(product: product);
-                            },
+                            textAlign: TextAlign.center,
                           ),
+                          if (_searchQuery.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _clearSearch,
+                              child: const Text('Limpiar búsqueda'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                    : RefreshIndicator(
+                      onRefresh: _onRefresh,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: GridView.builder(
+                          controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.7,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                              ),
+                          itemCount:
+                              _filteredProducts.length +
+                              (_isLoadingMore ? 2 : 0),
+                          itemBuilder: (context, index) {
+                            if (index >= _filteredProducts.length) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            final product = _filteredProducts[index];
+                            return ProductCard(product: product);
+                          },
                         ),
                       ),
+                    ),
           ),
         ],
       ),

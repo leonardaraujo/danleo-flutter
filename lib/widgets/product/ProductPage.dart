@@ -4,10 +4,7 @@ import '../../services/cartService.dart';
 class ProductPage extends StatelessWidget {
   final Map<String, dynamic> product;
 
-  const ProductPage({
-    Key? key,
-    required this.product,
-  }) : super(key: key);
+  const ProductPage({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {
@@ -34,13 +31,17 @@ class ProductPage extends StatelessWidget {
                   return Container(
                     color: Colors.grey[300],
                     child: const Center(
-                      child: Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                      child: Icon(
+                        Icons.broken_image,
+                        size: 60,
+                        color: Colors.grey,
+                      ),
                     ),
                   );
                 },
               ),
             ),
-            
+
             // Información del producto
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -55,9 +56,9 @@ class ProductPage extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   // Precio
                   Text(
                     'S/.${product['precio'].toStringAsFixed(2)}',
@@ -67,9 +68,9 @@ class ProductPage extends StatelessWidget {
                       color: Colors.green.shade700,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Valoración
                   Row(
                     children: [
@@ -84,27 +85,21 @@ class ProductPage extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         '4.5 (128 reseñas)',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Descripción
                   const Text(
                     'Descripción',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   Text(
                     product['descripcion'],
                     style: TextStyle(
@@ -113,9 +108,9 @@ class ProductPage extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Información adicional
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -142,7 +137,7 @@ class ProductPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 100),
                 ],
               ),
@@ -170,7 +165,7 @@ class ProductPage extends StatelessWidget {
               final cartService = CartService();
               final isInCart = cartService.isInCart(product['id']);
               final quantity = cartService.getQuantity(product['id']);
-              
+
               if (isInCart) {
                 return Row(
                   children: [
@@ -180,7 +175,9 @@ class ProductPage extends StatelessWidget {
                           cartService.addItem(product);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('${product['nombre']} agregado al carrito'),
+                              content: Text(
+                                '${product['nombre']} agregado al carrito',
+                              ),
                               backgroundColor: Colors.green,
                               duration: const Duration(seconds: 2),
                             ),
@@ -206,7 +203,7 @@ class ProductPage extends StatelessWidget {
                   ],
                 );
               }
-              
+
               return ElevatedButton(
                 onPressed: () {
                   cartService.addItem(product);
@@ -255,19 +252,10 @@ class ProductPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
-          ),
+          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
           Text(
             value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
           ),
         ],
       ),

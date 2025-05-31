@@ -5,10 +5,10 @@ class Sidebar extends StatelessWidget {
   final Function(int) onItemSelected;
 
   const Sidebar({
-    Key? key,
+    super.key,
     required this.selectedIndex,
     required this.onItemSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,34 +17,25 @@ class Sidebar extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-            ),
+            decoration: BoxDecoration(color: Theme.of(context).primaryColor),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.inventory,
-                    size: 30,
-                    color: Colors.blue,
-                  ),
+                  child: Icon(Icons.inventory, size: 30, color: Colors.blue),
                 ),
                 const SizedBox(height: 10),
                 const Text(
                   'Danleo',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
                 const SizedBox(height: 5),
                 Text(
                   'Versión 1.0',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withAlpha((0.8 * 255).toInt()),
                     fontSize: 12,
                   ),
                 ),
@@ -57,18 +48,29 @@ class Sidebar extends StatelessWidget {
             title: 'Productos',
             index: 0,
           ),
-          const Divider(),
+          _buildMenuItem(
+            context: context,
+            icon: Icons.cloud_upload,
+            title: 'Carga Automática',
+            index: 1,
+          ),
           _buildMenuItem(
             context: context,
             icon: Icons.settings,
             title: 'Configuración',
-            index: 1,
+            index: 2,
           ),
           _buildMenuItem(
             context: context,
             icon: Icons.help,
             title: 'Ayuda',
-            index: 2,
+            index: 3,
+          ),
+          _buildMenuItem(
+            context: context,
+            icon: Icons.location_on,
+            title: 'Ubícanos',
+            index: 4,
           ),
         ],
       ),
@@ -97,7 +99,7 @@ class Sidebar extends StatelessWidget {
       selected: isSelected,
       onTap: () {
         onItemSelected(index);
-        Navigator.pop(context); // Cierra el drawer después de seleccionar
+        Navigator.pop(context); // Cierra el drawer
       },
     );
   }

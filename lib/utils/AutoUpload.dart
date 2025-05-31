@@ -3,7 +3,7 @@ import '../services/ProductService.dart';
 import 'data.dart';
 
 class AutoUpload extends StatefulWidget {
-  const AutoUpload({Key? key}) : super(key: key);
+  const AutoUpload({super.key});
 
   @override
   State<AutoUpload> createState() => _AutoUploadState();
@@ -17,8 +17,8 @@ class _AutoUploadState extends State<AutoUpload> {
   int _totalUploaded = 0;
   int _totalFailed = 0;
   List<String> _errorMessages = [];
-  int _startIndex = 16; // Comenzar desde el elemento 16
-  
+  final int _startIndex = 16; // Comenzar desde el elemento 16
+
   // Acceder a la lista de productos correctamente
   List<Map<String, dynamic>> get products => productos;
 
@@ -37,13 +37,12 @@ class _AutoUploadState extends State<AutoUpload> {
       // Comenzar desde el índice 16
       for (int i = _startIndex; i < products.length; i++) {
         var product = products[i];
-        
+
         // Verificar si el producto tiene todos los campos necesarios
-        if (product["name"] == null || 
-            product["precio"] == null || 
-            product["descripcion"] == null || 
+        if (product["name"] == null ||
+            product["precio"] == null ||
+            product["descripcion"] == null ||
             product["urlImage"] == null) {
-          
           String errorMsg = "Error en producto #$i: Faltan campos requeridos";
           _errorMessages.add(errorMsg);
           setState(() {
@@ -51,16 +50,17 @@ class _AutoUploadState extends State<AutoUpload> {
           });
           continue;
         }
-        
+
         try {
           // Convertir el precio a double independientemente de si es int o double
-          final double precio = product["precio"] is int 
-              ? (product["precio"] as int).toDouble() 
-              : (product["precio"] as double);
-              
+          final double precio =
+              product["precio"] is int
+                  ? (product["precio"] as int).toDouble()
+                  : (product["precio"] as double);
+
           String result = await _productService.createProduct(
             product["name"],
-            precio,  // Ahora siempre es double
+            precio, // Ahora siempre es double
             product["descripcion"],
             product["urlImage"],
           );
@@ -88,9 +88,10 @@ class _AutoUploadState extends State<AutoUpload> {
       setState(() {
         _isLoading = false;
         _isSuccess = _totalFailed == 0;
-        _statusMessage = _isSuccess 
-            ? '¡Carga completada! $_totalUploaded productos subidos correctamente.'
-            : 'Carga parcial: $_totalUploaded subidos, $_totalFailed fallidos.';
+        _statusMessage =
+            _isSuccess
+                ? '¡Carga completada! $_totalUploaded productos subidos correctamente.'
+                : 'Carga parcial: $_totalUploaded subidos, $_totalFailed fallidos.';
       });
     } catch (e) {
       setState(() {
@@ -112,27 +113,17 @@ class _AutoUploadState extends State<AutoUpload> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.cloud_upload,
-                  size: 80,
-                  color: Colors.blue,
-                ),
+                const Icon(Icons.cloud_upload, size: 80, color: Colors.blue),
                 const SizedBox(height: 16),
                 const Text(
                   'Carga Automática de Datos',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Iniciando desde el elemento $_startIndex de ${products.length}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -181,7 +172,8 @@ class _AutoUploadState extends State<AutoUpload> {
                       color: _isSuccess ? Colors.green[50] : Colors.red[50],
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _isSuccess ? Colors.green[300]! : Colors.red[300]!,
+                        color:
+                            _isSuccess ? Colors.green[300]! : Colors.red[300]!,
                       ),
                     ),
                     child: Column(
@@ -196,14 +188,17 @@ class _AutoUploadState extends State<AutoUpload> {
                           _statusMessage,
                           style: TextStyle(
                             fontSize: 16,
-                            color: _isSuccess ? Colors.green[800] : Colors.red[800],
+                            color:
+                                _isSuccess
+                                    ? Colors.green[800]
+                                    : Colors.red[800],
                           ),
                           textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                  
+
                 // Mostrar los errores si hay alguno
                 if (_errorMessages.isNotEmpty)
                   Container(
@@ -236,16 +231,23 @@ class _AutoUploadState extends State<AutoUpload> {
                               padding: const EdgeInsets.all(8.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: _errorMessages.map((error) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Text(
-                                    error,
-                                    style: const TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                )).toList(),
+                                children:
+                                    _errorMessages
+                                        .map(
+                                          (error) => Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 4,
+                                            ),
+                                            child: Text(
+                                              error,
+                                              style: const TextStyle(
+                                                color: Colors.red,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
                               ),
                             ),
                           ),
@@ -253,12 +255,15 @@ class _AutoUploadState extends State<AutoUpload> {
                       ],
                     ),
                   ),
-                
+
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
                   onPressed: _isLoading ? null : _uploadProducts,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
                   ),
                   icon: const Icon(Icons.upload),
                   label: Text(

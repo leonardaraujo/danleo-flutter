@@ -4,19 +4,14 @@ import 'ProductPage.dart';
 class ProductCard extends StatelessWidget {
   final Map<String, dynamic> product;
 
-  const ProductCard({
-    Key? key,
-    required this.product,
-  }) : super(key: key);
+  const ProductCard({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: InkWell(
         onTap: () {
@@ -40,7 +35,9 @@ class ProductCard extends StatelessWidget {
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     color: Colors.grey[300],
-                    child: const Center(child: Icon(Icons.broken_image, size: 40)),
+                    child: const Center(
+                      child: Icon(Icons.broken_image, size: 40),
+                    ),
                   );
                 },
               ),
@@ -64,7 +61,7 @@ class ProductCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    
+
                     // Precio
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -77,7 +74,7 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    
+
                     // Valoración (estrellas)
                     Row(
                       children: [
@@ -96,19 +93,16 @@ class ProductCard extends StatelessWidget {
                             color: Colors.grey[600],
                             fontSize: 12,
                           ),
-                        )
+                        ),
                       ],
                     ),
-                    
+
                     // Descripción
                     const SizedBox(height: 4),
                     Expanded(
                       child: Text(
                         product['descripcion'],
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
