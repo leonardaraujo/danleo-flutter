@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'widgets/product/productList.dart';
 import 'widgets/common/Sidebar.dart';
-import 'widgets/store/store_map_screen.dart'; // ✅ Importación del mapa
+import 'widgets/store/store_map_screen.dart';
+import 'widgets/auth/login_screen.dart';
+import 'services/AuthService.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,13 +19,42 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Productos',
+      title: 'Danleo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const MainScreen(),
+      home: const AuthWrapper(),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Mientras se verifica el estado de autenticación
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        
+        // Si hay un usuario autenticado, mostrar la app principal
+        if (snapshot.hasData && snapshot.data != null) {
+          return const MainScreen();
+        }
+        
+        // Si no hay usuario autenticado, mostrar el login
+        return const LoginScreen();
+      },
     );
   }
 }
@@ -36,12 +68,47 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  final _authService = AuthService();
 
   void _onItemSelected(int index) {
     setState(() {
       _selectedIndex = index;
     });
-    print('Seleccionado índice: $index');
+  }
+
+  Future<void> _signOut() async {
+    final shouldSignOut = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar Sesión'),
+        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSignOut == true) {
+      try {
+        await _authService.signOut();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al cerrar sesión: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -54,7 +121,16 @@ class _MainScreenState extends State<MainScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text(_getTitleByIndex(_selectedIndex))),
+      appBar: AppBar(
+        title: Text(_getTitleByIndex(_selectedIndex)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _signOut,
+            tooltip: 'Cerrar Sesión',
+          ),
+        ],
+      ),
       drawer: Sidebar(
         selectedIndex: _selectedIndex,
         onItemSelected: _onItemSelected,
