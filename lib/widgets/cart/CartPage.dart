@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import "../../services/cartService.dart";
+import "../../services/CartService.dart";
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});

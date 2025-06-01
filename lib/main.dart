@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'widgets/product/productList.dart';
 import 'widgets/common/Sidebar.dart';
-import 'utils/AutoUpload.dart';
 import 'widgets/store/store_map_screen.dart'; // ✅ Importación del mapa
 
 void main() async {
@@ -17,7 +16,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Gestión de Productos',
+      title: 'Productos',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -49,10 +48,9 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final List<Widget> screens = [
       const ProductList(),
-      const AutoUpload(),
-      const Center(child: Text('Configuración')),
+      const StoreMapScreen(),
       const Center(child: Text('Ayuda')),
-      const StoreMapScreen(), // ✅ Pantalla "Ubícanos" en índice 4
+      const Center(child: Text('Configuración')),
     ];
 
     return Scaffold(
@@ -68,15 +66,13 @@ class _MainScreenState extends State<MainScreen> {
   String _getTitleByIndex(int index) {
     switch (index) {
       case 0:
-        return 'Gestión de Productos';
+        return 'Productos';
       case 1:
-        return 'Carga Automática';
+        return 'Ubícanos';
       case 2:
-        return 'Configuración';
-      case 3:
         return 'Ayuda';
-      case 4:
-        return 'Ubícanos'; // ✅ Nuevo título
+      case 3:
+        return 'Configuración'; 
       default:
         return 'Danleo';
     }
