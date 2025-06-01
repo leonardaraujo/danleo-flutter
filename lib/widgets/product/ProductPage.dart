@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/cartService.dart';
+import '../../services/CartService.dart';
 
 class ProductPage extends StatelessWidget {
   final Map<String, dynamic> product;

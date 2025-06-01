@@ -31,43 +31,69 @@ class CartItem {
     return CartItem(
       id: product['id'],
       nombre: product['nombre'],
-      precio: product['precio'].toDouble(),
+      precio: (product['precio'] is int) 
+          ? (product['precio'] as int).toDouble() 
+          : product['precio'],
       urlImagen: product['urlImagen'],
     );
   }
 }
 
 class CartService extends ChangeNotifier {
+  // Singleton para asegurar una única instancia
   static final CartService _instance = CartService._internal();
+  
   factory CartService() => _instance;
+  
   CartService._internal();
 
+  // Almacenamiento interno de los productos en el carrito
   final Map<String, CartItem> _items = {};
 
+  // Getter para acceder a los items (como copia inmutable)
   Map<String, CartItem> get items => Map.unmodifiable(_items);
   
+  // Número total de productos diferentes en el carrito
   int get itemCount => _items.length;
   
-  int get totalQuantity => _items.values.fold(0, (sum, item) => sum + item.cantidad);
+  // Cantidad total de productos (sumando cantidades)
+  int get totalQuantity {
+    if (_items.isEmpty) return 0;
+    return _items.values.fold(0, (sum, item) => sum + item.cantidad);
+  }
   
-  double get totalAmount => _items.values.fold(0.0, (sum, item) => sum + item.total);
+  // Monto total a pagar
+  double get totalAmount {
+    if (_items.isEmpty) return 0.0;
+    return _items.values.fold(0.0, (sum, item) => sum + item.total);
+  }
 
+  // Añadir un producto al carrito
   void addItem(Map<String, dynamic> product) {
     final productId = product['id'];
     
     if (_items.containsKey(productId)) {
+      // Si ya existe, aumentar cantidad
       _items[productId]!.cantidad++;
     } else {
+      // Si es nuevo, crearlo
       _items[productId] = CartItem.fromProduct(product);
     }
+    
+    // Notificar a los oyentes (widgets) que el carrito cambió
     notifyListeners();
+    
+    // Imprimir para debug
+    print('Producto agregado. Total en carrito: ${totalQuantity}');
   }
 
+  // Remover un producto del carrito
   void removeItem(String productId) {
     _items.remove(productId);
     notifyListeners();
   }
 
+  // Actualizar la cantidad de un producto
   void updateQuantity(String productId, int quantity) {
     if (_items.containsKey(productId)) {
       if (quantity <= 0) {
@@ -79,6 +105,7 @@ class CartService extends ChangeNotifier {
     }
   }
 
+  // Aumentar cantidad de un producto
   void increaseQuantity(String productId) {
     if (_items.containsKey(productId)) {
       _items[productId]!.cantidad++;
@@ -86,6 +113,7 @@ class CartService extends ChangeNotifier {
     }
   }
 
+  // Disminuir cantidad de un producto
   void decreaseQuantity(String productId) {
     if (_items.containsKey(productId)) {
       if (_items[productId]!.cantidad > 1) {
@@ -97,15 +125,18 @@ class CartService extends ChangeNotifier {
     }
   }
 
+  // Limpiar todo el carrito
   void clearCart() {
     _items.clear();
     notifyListeners();
   }
 
+  // Verificar si un producto está en el carrito
   bool isInCart(String productId) {
     return _items.containsKey(productId);
   }
 
+  // Obtener cantidad de un producto específico
   int getQuantity(String productId) {
     return _items[productId]?.cantidad ?? 0;
   }
