@@ -15,9 +15,21 @@ class _StoreMapScreenState extends State<StoreMapScreen> {
   GoogleMapController? _mapController;
   LatLng? _currentPosition;
   String? _errorMessage;
-
-  final LatLng _storeLocation = LatLng(-12.072084149539371, -75.20713025949189);
+  String? _selectedStoreName;
   Set<Polyline> _polylines = {};
+
+  // Lista de locales disponibles
+  final List<StoreLocation> _storeLocations = [
+    StoreLocation(
+      name: "Tienda Principal - Jr. Cajamarca 351",
+      location: LatLng(-12.072084149539371, -75.20713025949189),
+    ),
+    StoreLocation(
+      name: "Tienda Secundaria - Jr. Ica 269",
+      location: LatLng(-12.068189, -75.203603), // Coordenadas de ejemplo
+    ),
+    // Puedes agregar más locales aquí
+  ];
 
   @override
   void initState() {
@@ -36,10 +48,26 @@ class _StoreMapScreenState extends State<StoreMapScreen> {
     }
 
     final userLatLng = LatLng(position.latitude, position.longitude);
-    final routePoints = await _getRouteCoordinates(userLatLng, _storeLocation);
+
+    // Encuentra el local más cercano
+    final nearestStore = await _findNearestStore(userLatLng);
+
+    if (nearestStore == null) {
+      setState(() {
+        _errorMessage = 'No se pudo encontrar un local cercano.';
+      });
+      return;
+    }
+
+    // Obtener la ruta al local más cercano
+    final routePoints = await _getRouteCoordinates(
+      userLatLng,
+      nearestStore.location,
+    );
 
     setState(() {
       _currentPosition = userLatLng;
+      _selectedStoreName = nearestStore.name;
       _polylines = {
         Polyline(
           polylineId: const PolylineId("ruta_real"),
@@ -50,6 +78,40 @@ class _StoreMapScreenState extends State<StoreMapScreen> {
         ),
       };
     });
+  }
+
+  // Encuentra el local más cercano al usuario
+  Future<StoreLocation?> _findNearestStore(LatLng userLocation) async {
+    if (_storeLocations.isEmpty) return null;
+
+    // Calcula distancias a todos los locales
+    final distances = await Future.wait(
+      _storeLocations.map(
+        (store) => _calculateDistance(userLocation, store.location),
+      ),
+    );
+
+    // Encuentra el índice del local más cercano
+    int nearestIndex = 0;
+    double minDistance = distances[0];
+    for (int i = 1; i < distances.length; i++) {
+      if (distances[i] < minDistance) {
+        minDistance = distances[i];
+        nearestIndex = i;
+      }
+    }
+
+    return _storeLocations[nearestIndex];
+  }
+
+  // Calcula la distancia entre dos puntos en metros
+  Future<double> _calculateDistance(LatLng start, LatLng end) async {
+    return Geolocator.distanceBetween(
+      start.latitude,
+      start.longitude,
+      end.latitude,
+      end.longitude,
+    );
   }
 
   Future<Position?> _determinePosition() async {
@@ -136,29 +198,58 @@ class _StoreMapScreenState extends State<StoreMapScreen> {
               ? Center(child: Text(_errorMessage!))
               : _currentPosition == null
               ? const Center(child: CircularProgressIndicator())
-              : GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: _currentPosition!,
-                  zoom: 14,
-                ),
-                myLocationEnabled: true,
-                onMapCreated: (controller) => _mapController = controller,
-                markers: {
-                  Marker(
-                    markerId: const MarkerId("user"),
-                    position: _currentPosition!,
-                    infoWindow: const InfoWindow(title: "Tú estás aquí"),
-                  ),
-                  Marker(
-                    markerId: const MarkerId("store"),
-                    position: _storeLocation,
-                    infoWindow: const InfoWindow(
-                      title: "Tienda - Jr. Cajamarca 351",
+              : Column(
+                children: [
+                  if (_selectedStoreName != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        "Ruta a: $_selectedStoreName",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  Expanded(
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: _currentPosition!,
+                        zoom: 14,
+                      ),
+                      myLocationEnabled: true,
+                      onMapCreated: (controller) => _mapController = controller,
+                      markers: {
+                        // Marcadores para todos los locales
+                        ..._storeLocations.map(
+                          (store) => Marker(
+                            markerId: MarkerId("store_${store.name}"),
+                            position: store.location,
+                            infoWindow: InfoWindow(title: store.name),
+                            icon:
+                                store.name == _selectedStoreName
+                                    ? BitmapDescriptor.defaultMarkerWithHue(
+                                      BitmapDescriptor.hueOrange,
+                                    )
+                                    : BitmapDescriptor.defaultMarkerWithHue(
+                                      BitmapDescriptor.hueOrange,
+                                    ),
+                          ),
+                        ),
+                      },
+                      polylines: _polylines,
                     ),
                   ),
-                },
-                polylines: _polylines,
+                ],
               ),
     );
   }
+}
+
+// Clase para representar un local
+class StoreLocation {
+  final String name;
+  final LatLng location;
+
+  StoreLocation({required this.name, required this.location});
 }
