@@ -53,7 +53,7 @@ class Sidebar extends StatelessWidget {
             context: context,
             icon: Icons.location_on,
             title: 'Ubícanos',
-            index: 3,
+            index: 1,
           ),
           _buildMenuItem(
             context: context,
@@ -64,7 +64,7 @@ class Sidebar extends StatelessWidget {
             context: context,
             icon: Icons.settings,
             title: 'Configuración',
-            index: 1,
+            index: 3,
           ),
         ],
       ),
