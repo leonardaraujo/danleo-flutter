@@ -63,10 +63,7 @@ class _ProductListState extends State<ProductList> {
       _filteredProducts =
           _products.where((product) {
             final name = product['nombre']?.toString().toLowerCase() ?? '';
-            final description =
-                product['descripcion']?.toString().toLowerCase() ?? '';
-            return name.contains(_searchQuery) ||
-                description.contains(_searchQuery);
+            return name.contains(_searchQuery);
           }).toList();
     }
   }
