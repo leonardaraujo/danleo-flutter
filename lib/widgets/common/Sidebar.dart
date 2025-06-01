@@ -60,11 +60,17 @@ class Sidebar extends StatelessWidget {
             icon: Icons.help,
             title: 'Ayuda',
             index: 2,
-          ),      _buildMenuItem(
+          ),_buildMenuItem(
             context: context,
             icon: Icons.settings,
             title: 'Configuración',
             index: 3,
+          ),
+           _buildMenuItem(
+            context: context,
+            icon: Icons.person,
+            title: 'Perfil',
+            index: 4,
           ),
         ],
       ),
