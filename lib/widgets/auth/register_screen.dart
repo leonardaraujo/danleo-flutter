@@ -12,6 +12,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController(); // Nuevo controller para teléfono
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
@@ -24,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose(); // Liberar el nuevo controller
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -38,9 +40,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       await _authService.registerWithEmailPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-        _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        name: _nameController.text.trim(),
+        telefono: _phoneController.text.trim(), // Incluir teléfono
       );
       
       if (mounted) {
@@ -133,6 +136,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 16),
 
+                  // Campo de teléfono (NUEVO)
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'Número de teléfono',
+                      prefixIcon: const Icon(Icons.phone),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Ingresa tu número de teléfono';
+                      }
+                      if (!RegExp(r'^\d{9,15}$').hasMatch(value)) {
+                        return 'Ingresa un número de teléfono válido';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
                   // Campo de email
                   TextFormField(
                     controller: _emailController,
@@ -157,7 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 16),
 
-                  // Campo de contraseña
+                  // El resto del formulario permanece igual...
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -191,7 +218,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Campo de confirmar contraseña
                   TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: _obscureConfirmPassword,
@@ -235,7 +261,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : const Text(
                             'Crear Cuenta',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

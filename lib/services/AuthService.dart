@@ -1,33 +1,40 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'UserService.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+  final UserService _userService = UserService();
   // Usuario actual
   User? get currentUser => _auth.currentUser;
-  
+
   // Stream del estado de autenticación
   Stream<User?> get authStateChanges => _auth.authStateChanges();
-  
+
   // Verificar si el usuario está autenticado
   bool get isAuthenticated => _auth.currentUser != null;
 
   // Registrar usuario con email y contraseña
-  Future<UserCredential?> registerWithEmailPassword(
-    String email, 
-    String password, 
-    String name,
-  ) async {
+  Future<UserCredential?> registerWithEmailPassword({
+    required String email,
+    required String password,
+    required String name,
+    required String telefono,
+  }) async {
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
-      // Actualizar el nombre del usuario
+
+      // Actualizar el nombre del usuario en Firebase Auth
       await result.user?.updateDisplayName(name);
-      
+
+      // Guardar información adicional en Firestore
+      if (result.user != null) {
+        await _userService.saveUserOnRegistration(result.user!, name, telefono);
+      }
+
       notifyListeners();
       return result;
     } on FirebaseAuthException catch (e) {
@@ -37,7 +44,7 @@ class AuthService extends ChangeNotifier {
 
   // Iniciar sesión con email y contraseña
   Future<UserCredential?> signInWithEmailPassword(
-    String email, 
+    String email,
     String password,
   ) async {
     try {
@@ -45,6 +52,12 @@ class AuthService extends ChangeNotifier {
         email: email,
         password: password,
       );
+
+      // Actualizar datos en Firestore
+      if (result.user != null) {
+        await _userService.saveUserOnLogin(result.user!);
+      }
+
       notifyListeners();
       return result;
     } on FirebaseAuthException catch (e) {
