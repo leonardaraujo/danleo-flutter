@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'widgets/product/productList.dart';
 import 'widgets/common/Sidebar.dart';
 import 'widgets/store/store_map_screen.dart';
 import 'widgets/auth/login_screen.dart';
+import 'services/bottom_nav.dart';
 import 'services/AuthService.dart';
 
 void main() async {
@@ -38,21 +40,16 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Mientras se verifica el estado de autenticación
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
-        
-        // Si hay un usuario autenticado, mostrar la app principal
+
         if (snapshot.hasData && snapshot.data != null) {
           return const MainScreen();
         }
-        
-        // Si no hay usuario autenticado, mostrar el login
+
         return const LoginScreen();
       },
     );
@@ -118,6 +115,7 @@ class _MainScreenState extends State<MainScreen> {
       const StoreMapScreen(),
       const Center(child: Text('Ayuda')),
       const Center(child: Text('Configuración')),
+      const BottomNavPerfilOnly(), // 👉 Agregamos Perfil
     ];
 
     return Scaffold(
@@ -148,7 +146,9 @@ class _MainScreenState extends State<MainScreen> {
       case 2:
         return 'Ayuda';
       case 3:
-        return 'Configuración'; 
+        return 'Configuración';
+      case 4:
+        return 'Perfil';
       default:
         return 'Danleo';
     }
