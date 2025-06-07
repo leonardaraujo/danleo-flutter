@@ -113,8 +113,6 @@ class _MainScreenState extends State<MainScreen> {
     final List<Widget> screens = [
       const ProductList(),
       const StoreMapScreen(),
-      const Center(child: Text('Ayuda')),
-      const Center(child: Text('Configuración')),
       const BottomNavPerfilOnly(), // 👉 Agregamos Perfil
     ];
 
@@ -144,10 +142,6 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         return 'Ubícanos';
       case 2:
-        return 'Ayuda';
-      case 3:
-        return 'Configuración';
-      case 4:
         return 'Perfil';
       default:
         return 'Danleo';

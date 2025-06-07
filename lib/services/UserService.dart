@@ -25,7 +25,6 @@ class UserData {
       'telefono': telefono,
       'imgProfile': imgProfile,
       'lastUpdated': FieldValue.serverTimestamp(),
-      'hasPurchaseHistory': true, // Indicador explícito de que existe la subcolección
     };
   }
   
@@ -58,10 +57,10 @@ class UserService extends ChangeNotifier {
   // Getter para datos de usuario actual
   UserData? get currentUserData => _currentUserData;
   
-  // Crear o actualizar usuario después del registro o login
+  // Crear o actualizar usuario después del registro
   Future<void> saveUserOnRegistration(User user, String nombre, String telefono) async {
     try {
-      // Crear nuevo documento de usuario
+      // Crear nuevo documento de usuario (SIN subcolección)
       final userData = UserData(
         userId: user.uid,
         email: user.email ?? '',
@@ -69,19 +68,8 @@ class UserService extends ChangeNotifier {
         telefono: telefono,
       );
       
-      // Guardar datos principales del usuario
+      // Solo guardar datos principales del usuario
       await _db.collection('usuarios').doc(user.uid).set(userData.toMap());
-      
-      // Crear explícitamente la subcolección purchaseHistory con un documento inicial vacío
-      // Esto garantiza que la subcolección exista aunque esté vacía
-      await _db.collection('usuarios').doc(user.uid)
-          .collection('purchaseHistory')
-          .doc('placeholder')
-          .set({
-            'createdAt': FieldValue.serverTimestamp(),
-            'isPlaceholder': true,
-            'note': 'Este es un documento para inicializar la subcolección'
-          });
       
       _currentUserData = userData;
       notifyListeners();
@@ -105,42 +93,10 @@ class UserService extends ChangeNotifier {
         
         // Cargar datos del usuario
         await getUserData(user.uid);
-        
-        // Verificar si existe la subcolección purchaseHistory
-        final purchaseHistoryCheck = await _db.collection('usuarios')
-            .doc(user.uid)
-            .collection('purchaseHistory')
-            .limit(1)
-            .get();
-            
-        // Si no existe ningún documento en la subcolección, crear uno de placeholder
-        if (purchaseHistoryCheck.docs.isEmpty) {
-          await _db.collection('usuarios')
-              .doc(user.uid)
-              .collection('purchaseHistory')
-              .doc('placeholder')
-              .set({
-                'createdAt': FieldValue.serverTimestamp(),
-                'isPlaceholder': true,
-                'note': 'Este es un documento para inicializar la subcolección'
-              });
-        }
       } else {
-        // Si no existe (caso improbable pero posible si se borraron los datos)
+        // Si no existe, crear usuario básico
         final userData = UserData.fromFirebaseUser(user);
         await _db.collection('usuarios').doc(user.uid).set(userData.toMap());
-        
-        // Crear subcolección
-        await _db.collection('usuarios')
-            .doc(user.uid)
-            .collection('purchaseHistory')
-            .doc('placeholder')
-            .set({
-              'createdAt': FieldValue.serverTimestamp(),
-              'isPlaceholder': true,
-              'note': 'Este es un documento para inicializar la subcolección'
-            });
-            
         _currentUserData = userData;
       }
       
@@ -180,6 +136,7 @@ class UserService extends ChangeNotifier {
       final snapshot = await _db.collection('usuarios')
           .doc(userId)
           .collection('purchaseHistory')
+          .where('estado', isEqualTo: 'completado') // Solo compras reales
           .limit(1)
           .get();
       return snapshot.docs.isNotEmpty;

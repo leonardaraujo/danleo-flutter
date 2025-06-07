@@ -16,33 +16,54 @@ class ProductCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
       child: Column(
         children: [
-          // Imagen del producto
+          // Imagen del producto con ícono de información
           Expanded(
             flex: 6,
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProductPage(product: product),
-                  ),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                child: Image.network(
-                  product['urlImagen'],
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[300],
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 40),
+            child: Stack(
+              children: [
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductPage(product: product),
                       ),
                     );
                   },
+                  child: Container(
+                    width: double.infinity,
+                    child: Image.network(
+                      product['urlImagen'],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: Icon(Icons.broken_image, size: 40),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
+                // Ícono de información
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: const Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 

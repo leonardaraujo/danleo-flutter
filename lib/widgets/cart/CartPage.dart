@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import "../../services/CartService.dart";
 
 class CartPage extends StatelessWidget {
@@ -66,7 +68,6 @@ class CartPage extends StatelessWidget {
 
           return Column(
             children: [
-              // Lista de productos
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -77,8 +78,6 @@ class CartPage extends StatelessWidget {
                   },
                 ),
               ),
-
-              // Resumen del carrito
               _buildCartSummary(context, cartService),
             ],
           );
@@ -94,7 +93,6 @@ class CartPage extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            // Imagen del producto
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
@@ -112,10 +110,7 @@ class CartPage extends StatelessWidget {
                 },
               ),
             ),
-
             const SizedBox(width: 12),
-
-            // Información del producto
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,8 +143,6 @@ class CartPage extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Controles de cantidad
             Column(
               children: [
                 Row(
@@ -267,7 +260,7 @@ class CartPage extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  _showPaymentDialog(context);
+                  _showPurchaseConfirmationDialog(context, cartService);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
@@ -279,7 +272,7 @@ class CartPage extends StatelessWidget {
                   elevation: 2,
                 ),
                 child: const Text(
-                  'Proceder al Pago',
+                  'Realizar compra',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -325,23 +318,202 @@ class CartPage extends StatelessWidget {
     );
   }
 
-  void _showPaymentDialog(BuildContext context) {
+  void _showPurchaseConfirmationDialog(
+    BuildContext context,
+    CartService cartService,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Pago'),
-          content: const Text('Funcionalidad de pago no implementada aún.'),
+          title: Row(
+            children: [
+              Icon(
+                Icons.shopping_cart_checkout,
+                color: Theme.of(context).primaryColor,
+              ),
+              const SizedBox(width: 8),
+              const Text('Confirmar Compra'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '¿Estás seguro de que deseas realizar esta compra?',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Productos:',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        Text('${cartService.totalQuantity} items'),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'S/.${cartService.totalAmount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Aceptar'),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _processPurchase(context, cartService);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Confirmar'),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _processPurchase(
+    BuildContext context,
+    CartService cartService,
+  ) async {
+    // Guardar referencia al ScaffoldMessenger antes de mostrar el diálogo
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (BuildContext dialogContext) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text('Procesando compra...'),
+              ],
+            ),
+          ),
+    );
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        navigator.pop(); // Cerrar loading
+        throw Exception('Usuario no autenticado');
+      }
+
+      final items = cartService.items.values.toList();
+      if (items.isEmpty) {
+        navigator.pop(); // Cerrar loading
+        throw Exception('El carrito está vacío');
+      }
+
+      print('Iniciando proceso de compra...');
+      print('Usuario: ${user.uid}');
+      print('Items en carrito: ${items.length}');
+
+      // Crear los datos de la compra
+      final purchaseData = {
+        'productos': items.map((item) => item.id).toList(),
+        'fechaCompra': FieldValue.serverTimestamp(),
+        'total': cartService.totalAmount,
+        'cantidadItems': cartService.totalQuantity,
+        'estado': 'completado',
+      };
+
+      print('Datos de compra: $purchaseData');
+
+      // Guardar en la subcolección purchaseHistory del usuario
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .collection('purchaseHistory')
+          .add(purchaseData);
+
+      print('Compra guardada exitosamente');
+
+      // Limpiar el carrito
+      cartService.clearCart();
+      print('Carrito limpiado');
+
+      // Cerrar loading usando la referencia guardada
+      navigator.pop();
+
+      // Cerrar CartPage usando la referencia guardada
+      navigator.pop();
+
+      // Mostrar éxito usando la referencia guardada
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('¡Compra realizada exitosamente!'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      print('Error en proceso de compra: $e');
+
+      // Cerrar loading usando la referencia guardada
+      navigator.pop();
+
+      // Mostrar error usando la referencia guardada
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Error: ${e.toString()}')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 }
