@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'widgets/product/productList.dart';
 import 'widgets/common/Sidebar.dart';
 import 'widgets/store/store_map_screen.dart';
+import 'widgets/store/purchase_history_screen.dart';
 import 'widgets/auth/login_screen.dart';
 import 'services/bottom_nav.dart';
 import 'services/AuthService.dart';
@@ -113,6 +114,7 @@ class _MainScreenState extends State<MainScreen> {
     final List<Widget> screens = [
       const ProductList(),
       const StoreMapScreen(),
+      const PurchaseHistoryScreen(),
       const BottomNavPerfilOnly(), // 👉 Agregamos Perfil
     ];
 
@@ -142,6 +144,8 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         return 'Ubícanos';
       case 2:
+        return 'Historial de Compras';
+      case 3:
         return 'Perfil';
       default:
         return 'Danleo';
