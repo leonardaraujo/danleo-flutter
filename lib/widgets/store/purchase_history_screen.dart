@@ -144,10 +144,9 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [
-                                    const Icon(Icons.attach_money, size: 16),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Total: \$${double.parse(total).toStringAsFixed(2)}',
+                                      'Total: S/${double.parse(total).toStringAsFixed(2)}', // Cambiado a S/
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,
@@ -181,7 +180,7 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              '\$${(product['precio'] * (product['cantidad'] ?? 1)).toStringAsFixed(2)}',
+                                              'S/${(product['precio'] * (product['cantidad'] ?? 1)).toStringAsFixed(2)}', // Cambiado a S/
                                               style: const TextStyle(fontWeight: FontWeight.bold),
                                             ),
                                           ],
