@@ -57,9 +57,15 @@ class Sidebar extends StatelessWidget {
           ),
           _buildMenuItem(
             context: context,
+            icon: Icons.history,
+            title: 'Historial de Compras',
+            index: 2,
+          ),
+          _buildMenuItem(
+            context: context,
             icon: Icons.person,
             title: 'Perfil',
-            index: 2,
+            index: 3,
           ),
         ],
       ),

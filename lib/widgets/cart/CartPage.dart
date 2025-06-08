@@ -413,7 +413,6 @@ class CartPage extends StatelessWidget {
     BuildContext context,
     CartService cartService,
   ) async {
-    // Guardar referencia al ScaffoldMessenger antes de mostrar el diálogo
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
@@ -421,16 +420,15 @@ class CartPage extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (BuildContext dialogContext) => const AlertDialog(
-            content: Row(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 16),
-                Text('Procesando compra...'),
-              ],
-            ),
-          ),
+      builder: (BuildContext dialogContext) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Procesando compra...'),
+          ],
+        ),
+      ),
     );
 
     try {
@@ -446,20 +444,17 @@ class CartPage extends StatelessWidget {
         throw Exception('El carrito está vacío');
       }
 
-      print('Iniciando proceso de compra...');
-      print('Usuario: ${user.uid}');
-      print('Items en carrito: ${items.length}');
+      // Obtener información completa de los productos
+      final productosCompleto = await _getCompleteProductInfo(items);
 
-      // Crear los datos de la compra
+      // Crear los datos de la compra con información completa
       final purchaseData = {
-        'productos': items.map((item) => item.id).toList(),
+        'productos': productosCompleto,
         'fechaCompra': FieldValue.serverTimestamp(),
         'total': cartService.totalAmount,
         'cantidadItems': cartService.totalQuantity,
         'estado': 'completado',
       };
-
-      print('Datos de compra: $purchaseData');
 
       // Guardar en la subcolección purchaseHistory del usuario
       await FirebaseFirestore.instance
@@ -468,19 +463,16 @@ class CartPage extends StatelessWidget {
           .collection('purchaseHistory')
           .add(purchaseData);
 
-      print('Compra guardada exitosamente');
-
       // Limpiar el carrito
       cartService.clearCart();
-      print('Carrito limpiado');
 
-      // Cerrar loading usando la referencia guardada
+      // Cerrar loading
       navigator.pop();
 
-      // Cerrar CartPage usando la referencia guardada
+      // Cerrar CartPage
       navigator.pop();
 
-      // Mostrar éxito usando la referencia guardada
+      // Mostrar éxito
       scaffoldMessenger.showSnackBar(
         const SnackBar(
           content: Row(
@@ -495,12 +487,10 @@ class CartPage extends StatelessWidget {
         ),
       );
     } catch (e) {
-      print('Error en proceso de compra: $e');
-
-      // Cerrar loading usando la referencia guardada
+      // Cerrar loading
       navigator.pop();
 
-      // Mostrar error usando la referencia guardada
+      // Mostrar error
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Row(
@@ -515,5 +505,53 @@ class CartPage extends StatelessWidget {
         ),
       );
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _getCompleteProductInfo(List<CartItem> items) async {
+    final productosCompleto = <Map<String, dynamic>>[];
+
+    for (final item in items) {
+      try {
+        // Obtener información adicional del producto desde Firestore
+        final productDoc = await FirebaseFirestore.instance
+            .collection('productos')
+            .doc(item.id)
+            .get();
+
+        if (productDoc.exists) {
+          productosCompleto.add({
+            'id': item.id,
+            'nombre': item.nombre,
+            'precio': item.precio,
+            'cantidad': item.cantidad,
+            'urlImagen': item.urlImagen,
+            // Puedes agregar más campos si son necesarios
+            'descripcion': productDoc['descripcion'] ?? '',
+            'categoria': productDoc['categoria'] ?? '',
+          });
+        } else {
+          // Si no existe el documento, usar solo la información del carrito
+          productosCompleto.add({
+            'id': item.id,
+            'nombre': item.nombre,
+            'precio': item.precio,
+            'cantidad': item.cantidad,
+            'urlImagen': item.urlImagen,
+          });
+        }
+      } catch (e) {
+        debugPrint('Error obteniendo información del producto ${item.id}: $e');
+        // Si hay error, usar solo la información básica
+        productosCompleto.add({
+          'id': item.id,
+          'nombre': item.nombre,
+          'precio': item.precio,
+          'cantidad': item.cantidad,
+          'urlImagen': item.urlImagen,
+        });
+      }
+    }
+
+    return productosCompleto;
   }
 }
