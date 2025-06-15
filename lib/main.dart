@@ -6,6 +6,7 @@ import 'widgets/product/productList.dart';
 import 'widgets/common/Sidebar.dart';
 import 'widgets/store/store_map_screen.dart';
 import 'widgets/auth/login_screen.dart';
+import 'widgets/common/splash_screen.dart';
 import 'services/bottom_nav.dart';
 import 'services/AuthService.dart';
 
@@ -26,7 +27,9 @@ class MainApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const AuthWrapper(),
+      home: const SplashScreen(
+        nextScreen: AuthWrapper(),
+      ),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -113,7 +116,7 @@ class _MainScreenState extends State<MainScreen> {
     final List<Widget> screens = [
       const ProductList(),
       const StoreMapScreen(),
-      const BottomNavPerfilOnly(), // 👉 Agregamos Perfil
+      const BottomNavPerfilOnly(),
     ];
 
     return Scaffold(
