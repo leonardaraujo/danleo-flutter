@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'splash_image.dart'; // Importa el widget SplashImage
 
 class Sidebar extends StatelessWidget {
   final int selectedIndex;
@@ -17,14 +18,22 @@ class Sidebar extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+            decoration: const BoxDecoration(
+              color: Color(
+                0xFF00443F,
+              ), // Cambia el color de fondo al especificado
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.inventory, size: 30, color: Colors.blue),
+                  child: const SplashImage(
+                    width: 90,
+                    height: 90,
+                    fit: BoxFit.contain, // Usa el logo como imagen
+                  ),
                 ),
                 const SizedBox(height: 10),
                 const Text(
