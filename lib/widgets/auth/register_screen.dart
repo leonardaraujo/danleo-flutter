@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:country_picker/country_picker.dart';
 import '../../services/AuthService.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -12,20 +14,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController(); // Nuevo controller para teléfono
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+
+  // Variables para el código de país
+  String _selectedCountryCode = '+51';
+  String _selectedCountryName = 'Perú';
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose(); // Liberar el nuevo controller
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -39,15 +45,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
+      // Concatenar código de país con el número telefónico
+      String fullPhoneNumber =
+          '$_selectedCountryCode${_phoneController.text.trim()}';
+
       await _authService.registerWithEmailPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         name: _nameController.text.trim(),
-        telefono: _phoneController.text.trim(), // Incluir teléfono
+        telefono: fullPhoneNumber,
       );
-      
+
       if (mounted) {
-        Navigator.pop(context); // Volver a login
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Cuenta creada exitosamente'),
@@ -58,10 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -100,14 +107,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   Text(
                     'Completa los datos para registrarte',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
 
@@ -136,26 +143,98 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Campo de teléfono (NUEVO)
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: 'Número de teléfono',
-                      prefixIcon: const Icon(Icons.phone),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  // Campo de teléfono con selector de país
+                  Row(
+                    children: [
+                      // Selector de código de país
+                      InkWell(
+                        onTap: () {
+                          showCountryPicker(
+                            context: context,
+                            showPhoneCode: true,
+                            favorite: ['PE'], // Perú como favorito
+                            countryListTheme: CountryListThemeData(
+                              flagSize: 25,
+                              backgroundColor: Colors.white,
+                              textStyle: const TextStyle(fontSize: 16),
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
+                              ),
+                              inputDecoration: InputDecoration(
+                                labelText: 'Buscar país',
+                                hintText: 'Escribe el nombre del país',
+                                prefixIcon: const Icon(Icons.search),
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: const Color(
+                                      0xFF8C98A8,
+                                    ).withOpacity(0.2),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            onSelect: (Country country) {
+                              setState(() {
+                                _selectedCountryCode = '+${country.phoneCode}';
+                                _selectedCountryName = country.name;
+                              });
+                            },
+                          );
+                        },
+                        child: Container(
+                          height: 60,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _selectedCountryCode,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.arrow_drop_down, size: 20),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Ingresa tu número de teléfono';
-                      }
-                      if (!RegExp(r'^\d{9,15}$').hasMatch(value)) {
-                        return 'Ingresa un número de teléfono válido';
-                      }
-                      return null;
-                    },
+                      const SizedBox(width: 8),
+
+                      // Campo de número telefónico
+                      Expanded(
+                        child: TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(
+                              9,
+                            ), // Limita a 9 dígitos
+                          ],
+                          decoration: InputDecoration(
+                            labelText: 'Número de teléfono',
+                            hintText: 'Tu número de teléfono',
+                            prefixIcon: const Icon(Icons.phone),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Ingresa tu número de teléfono';
+                            }
+                            if (!RegExp(r'^[0-9]{9}$').hasMatch(value)) {
+                              return 'Debe tener exactamente 9 dígitos';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 16),
@@ -175,16 +254,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Ingresa tu email';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(value)) {
                         return 'Ingresa un email válido';
                       }
                       return null;
                     },
                   ),
-                  
+
                   const SizedBox(height: 16),
 
-                  // El resto del formulario permanece igual...
+                  // Campo de contraseña
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -193,7 +274,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() {
@@ -218,6 +301,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 16),
 
+                  // Campo de confirmación de contraseña
                   TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: _obscureConfirmPassword,
@@ -226,7 +310,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                          _obscureConfirmPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() {
@@ -260,19 +346,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                    child:
+                        _isLoading
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Text(
+                              'Crear Cuenta',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          )
-                        : const Text(
-                            'Crear Cuenta',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
                   ),
 
                   const SizedBox(height: 16),
