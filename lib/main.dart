@@ -7,12 +7,12 @@ import 'widgets/common/Sidebar.dart';
 import 'widgets/store/store_map_screen.dart';
 import 'widgets/store/purchase_history_screen.dart';
 import 'widgets/auth/login_screen.dart';
+import 'widgets/common/splash_screen.dart'; // Importamos el splash screen
 import 'services/bottom_nav.dart';
 import 'services/AuthService.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
   runApp(const MainApp());
 }
 
@@ -27,8 +27,58 @@ class MainApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const AuthWrapper(),
+      // Usar el componente SplashScreen y pasarle el AppInitializer
+      home: SplashScreen(
+        nextScreen: const AppInitializer(),
+        minimumDuration: const Duration(seconds: 3),
+      ),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+// Esta clase se encarga de inicializar Firebase
+class AppInitializer extends StatefulWidget {
+  const AppInitializer({super.key});
+
+  @override
+  State<AppInitializer> createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends State<AppInitializer> {
+  // Inicialización en el initState
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      // Inicializar Firebase 
+      await Firebase.initializeApp();
+      
+      // Navegar a AuthWrapper cuando Firebase está listo
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+        );
+      }
+    } catch (e) {
+      print('Error inicializando Firebase: $e');
+      // En caso de error, mostrar mensaje y reintentar
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) _initializeApp();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Pantalla simple de carga mientras se inicializa Firebase
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
@@ -77,21 +127,20 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _signOut() async {
     final shouldSignOut = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Cerrar Sesión'),
-            content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Cerrar Sesión'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar Sesión'),
+        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
     );
 
     if (shouldSignOut == true) {
@@ -116,7 +165,7 @@ class _MainScreenState extends State<MainScreen> {
       const ProductList(),
       const StoreMapScreen(),
       const PurchaseHistoryScreen(),
-      const BottomNavPerfilOnly(), // 👉 Agregamos Perfil
+      const BottomNavPerfilOnly(),
     ];
 
     return Scaffold(
