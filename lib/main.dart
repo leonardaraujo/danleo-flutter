@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,7 +8,7 @@ import 'widgets/common/Sidebar.dart';
 import 'widgets/store/store_map_screen.dart';
 import 'widgets/store/purchase_history_screen.dart';
 import 'widgets/auth/login_screen.dart';
-import 'widgets/common/splash_screen.dart'; // Importamos el splash screen
+import 'widgets/common/splash_screen.dart';
 import 'services/bottom_nav.dart';
 import 'services/AuthService.dart';
 
@@ -27,7 +28,6 @@ class MainApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      // Usar el componente SplashScreen y pasarle el AppInitializer
       home: SplashScreen(
         nextScreen: const AppInitializer(),
         minimumDuration: const Duration(seconds: 3),
@@ -37,7 +37,6 @@ class MainApp extends StatelessWidget {
   }
 }
 
-// Esta clase se encarga de inicializar Firebase
 class AppInitializer extends StatefulWidget {
   const AppInitializer({super.key});
 
@@ -46,7 +45,6 @@ class AppInitializer extends StatefulWidget {
 }
 
 class _AppInitializerState extends State<AppInitializer> {
-  // Inicialización en el initState
   @override
   void initState() {
     super.initState();
@@ -55,10 +53,8 @@ class _AppInitializerState extends State<AppInitializer> {
 
   Future<void> _initializeApp() async {
     try {
-      // Inicializar Firebase 
       await Firebase.initializeApp();
-      
-      // Navegar a AuthWrapper cuando Firebase está listo
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const AuthWrapper()),
@@ -66,7 +62,6 @@ class _AppInitializerState extends State<AppInitializer> {
       }
     } catch (e) {
       print('Error inicializando Firebase: $e');
-      // En caso de error, mostrar mensaje y reintentar
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) _initializeApp();
     }
@@ -74,7 +69,6 @@ class _AppInitializerState extends State<AppInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    // Pantalla simple de carga mientras se inicializa Firebase
     return const Scaffold(
       body: Center(
         child: CircularProgressIndicator(),
@@ -114,14 +108,47 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   final _authService = AuthService();
+  Timer? _inactivityTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _resetInactivityTimer();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _inactivityTimer?.cancel();
+    super.dispose();
+  }
+
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = Timer(const Duration(minutes: 1), () async {
+      await _authService.signOut();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AuthWrapper()),
+          (route) => false,
+        );
+      }
+    });
+  }
+
+  void _onUserInteraction([_]) {
+    _resetInactivityTimer();
+  }
 
   void _onItemSelected(int index) {
     setState(() {
       _selectedIndex = index;
     });
+    _onUserInteraction(); // reiniciar temporizador al cambiar de página
   }
 
   Future<void> _signOut() async {
@@ -146,6 +173,12 @@ class _MainScreenState extends State<MainScreen> {
     if (shouldSignOut == true) {
       try {
         await _authService.signOut();
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const AuthWrapper()),
+            (route) => false,
+          );
+        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -168,22 +201,27 @@ class _MainScreenState extends State<MainScreen> {
       const BottomNavPerfilOnly(),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_getTitleByIndex(_selectedIndex)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _signOut,
-            tooltip: 'Cerrar Sesión',
-          ),
-        ],
+    return Listener(
+      onPointerDown: _onUserInteraction,
+      onPointerMove: _onUserInteraction,
+      onPointerUp: _onUserInteraction,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_getTitleByIndex(_selectedIndex)),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: _signOut,
+              tooltip: 'Cerrar Sesión',
+            ),
+          ],
+        ),
+        drawer: Sidebar(
+          selectedIndex: _selectedIndex,
+          onItemSelected: _onItemSelected,
+        ),
+        body: IndexedStack(index: _selectedIndex, children: screens),
       ),
-      drawer: Sidebar(
-        selectedIndex: _selectedIndex,
-        onItemSelected: _onItemSelected,
-      ),
-      body: IndexedStack(index: _selectedIndex, children: screens),
     );
   }
 
