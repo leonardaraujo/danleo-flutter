@@ -117,7 +117,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _resetInactivityTimer();
   }
 
   @override
@@ -127,9 +126,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  void _resetInactivityTimer() {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // App en segundo plano: iniciar timer
+      _startInactivityTimer();
+    } else if (state == AppLifecycleState.resumed) {
+      // App vuelve a primer plano: cancelar timer
+      _cancelInactivityTimer();
+    }
+  }
+
+  void _startInactivityTimer() {
     _inactivityTimer?.cancel();
-    _inactivityTimer = Timer(const Duration(minutes: 1), () async {
+    _inactivityTimer = Timer(const Duration(minutes: 5), () async {
       await _authService.signOut();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -140,15 +150,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  void _onUserInteraction([_]) {
-    _resetInactivityTimer();
+  void _cancelInactivityTimer() {
+    _inactivityTimer?.cancel();
   }
 
   void _onItemSelected(int index) {
     setState(() {
       _selectedIndex = index;
     });
-    _onUserInteraction(); // reiniciar temporizador al cambiar de página
   }
 
   Future<void> _signOut() async {
@@ -201,27 +210,22 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       const BottomNavPerfilOnly(),
     ];
 
-    return Listener(
-      onPointerDown: _onUserInteraction,
-      onPointerMove: _onUserInteraction,
-      onPointerUp: _onUserInteraction,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_getTitleByIndex(_selectedIndex)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: _signOut,
-              tooltip: 'Cerrar Sesión',
-            ),
-          ],
-        ),
-        drawer: Sidebar(
-          selectedIndex: _selectedIndex,
-          onItemSelected: _onItemSelected,
-        ),
-        body: IndexedStack(index: _selectedIndex, children: screens),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_getTitleByIndex(_selectedIndex)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _signOut,
+            tooltip: 'Cerrar Sesión',
+          ),
+        ],
       ),
+      drawer: Sidebar(
+        selectedIndex: _selectedIndex,
+        onItemSelected: _onItemSelected,
+      ),
+      body: IndexedStack(index: _selectedIndex, children: screens),
     );
   }
 
