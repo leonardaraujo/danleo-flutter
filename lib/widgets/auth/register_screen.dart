@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:country_picker/country_picker.dart';
 import '../../services/AuthService.dart';
+import '../common/splash_image.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -22,6 +23,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+
+  // Colores de la empresa
+  static const Color primaryGreen = Color(0xFF00443F);
+  static const Color primaryOrange = Color(0xFFFF7B00);
+  static const Color secondaryCream = Color(0xFFF6E4D6);
+  static const Color secondaryRed = Color(0xFFB10000);
 
   // Variables para el código de país
   String _selectedCountryCode = '+51';
@@ -45,7 +52,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // Concatenar código de país con el número telefónico
       String fullPhoneNumber =
           '$_selectedCountryCode${_phoneController.text.trim()}';
 
@@ -61,14 +67,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Cuenta creada exitosamente'),
-            backgroundColor: Colors.green,
+            backgroundColor: primaryGreen,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          SnackBar(content: Text(e.toString()), backgroundColor: secondaryRed),
         );
       }
     } finally {
@@ -83,10 +89,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: secondaryCream,
       appBar: AppBar(
-        title: const Text('Crear Cuenta'),
+        title: const Text(
+          'Crear Cuenta',
+          style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: primaryGreen),
       ),
       body: SafeArea(
         child: Padding(
@@ -97,13 +108,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
+
+                  // Lo
+                  const SizedBox(height: 16),
 
                   // Título
                   Text(
                     'Crear una nueva cuenta',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: primaryGreen,
+                      fontSize: 24,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -112,23 +128,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   Text(
                     'Completa los datos para registrarte',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: primaryGreen.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
                     textAlign: TextAlign.center,
                   ),
 
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 32),
 
                   // Campo de nombre
                   TextFormField(
                     controller: _nameController,
                     decoration: InputDecoration(
                       labelText: 'Nombre completo',
-                      prefixIcon: const Icon(Icons.person),
+                      labelStyle: TextStyle(color: primaryGreen),
+                      prefixIcon: Icon(Icons.person, color: primaryOrange),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryGreen),
                       ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryOrange, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: primaryGreen.withOpacity(0.5),
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -152,7 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           showCountryPicker(
                             context: context,
                             showPhoneCode: true,
-                            favorite: ['PE'], // Perú como favorito
+                            favorite: ['PE'],
                             countryListTheme: CountryListThemeData(
                               flagSize: 25,
                               backgroundColor: Colors.white,
@@ -164,12 +195,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               inputDecoration: InputDecoration(
                                 labelText: 'Buscar país',
                                 hintText: 'Escribe el nombre del país',
-                                prefixIcon: const Icon(Icons.search),
+                                prefixIcon: Icon(
+                                  Icons.search,
+                                  color: primaryOrange,
+                                ),
                                 border: OutlineInputBorder(
                                   borderSide: BorderSide(
-                                    color: const Color(
-                                      0xFF8C98A8,
-                                    ).withOpacity(0.2),
+                                    color: primaryGreen.withOpacity(0.5),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: primaryOrange,
+                                    width: 2,
                                   ),
                                 ),
                               ),
@@ -186,18 +224,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           height: 60,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
+                            border: Border.all(
+                              color: primaryGreen.withOpacity(0.5),
+                            ),
                             borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 _selectedCountryCode,
-                                style: const TextStyle(fontSize: 16),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: primaryGreen,
+                                ),
                               ),
                               const SizedBox(width: 4),
-                              const Icon(Icons.arrow_drop_down, size: 20),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                size: 20,
+                                color: primaryOrange,
+                              ),
                             ],
                           ),
                         ),
@@ -211,17 +259,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           keyboardType: TextInputType.phone,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(
-                              9,
-                            ), // Limita a 9 dígitos
+                            LengthLimitingTextInputFormatter(9),
                           ],
                           decoration: InputDecoration(
                             labelText: 'Número de teléfono',
+                            labelStyle: TextStyle(color: primaryGreen),
                             hintText: 'Tu número de teléfono',
-                            prefixIcon: const Icon(Icons.phone),
+                            prefixIcon: Icon(Icons.phone, color: primaryOrange),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: primaryGreen),
                             ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: primaryOrange,
+                                width: 2,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: primaryGreen.withOpacity(0.5),
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -245,10 +308,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: 'Email',
-                      prefixIcon: const Icon(Icons.email),
+                      labelStyle: TextStyle(color: primaryGreen),
+                      prefixIcon: Icon(Icons.email, color: primaryOrange),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryGreen),
                       ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryOrange, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: primaryGreen.withOpacity(0.5),
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -271,12 +348,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       labelText: 'Contraseña',
-                      prefixIcon: const Icon(Icons.lock),
+                      labelStyle: TextStyle(color: primaryGreen),
+                      prefixIcon: Icon(Icons.lock, color: primaryOrange),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
                               ? Icons.visibility
                               : Icons.visibility_off,
+                          color: primaryGreen,
                         ),
                         onPressed: () {
                           setState(() {
@@ -286,7 +365,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryGreen),
                       ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryOrange, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: primaryGreen.withOpacity(0.5),
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -307,12 +399,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: _obscureConfirmPassword,
                     decoration: InputDecoration(
                       labelText: 'Confirmar contraseña',
-                      prefixIcon: const Icon(Icons.lock_outline),
+                      labelStyle: TextStyle(color: primaryGreen),
+                      prefixIcon: Icon(
+                        Icons.lock_outline,
+                        color: primaryOrange,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirmPassword
                               ? Icons.visibility
                               : Icons.visibility_off,
+                          color: primaryGreen,
                         ),
                         onPressed: () {
                           setState(() {
@@ -322,7 +419,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryGreen),
                       ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryOrange, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: primaryGreen.withOpacity(0.5),
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -335,16 +445,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
                   // Botón de registro
                   ElevatedButton(
                     onPressed: _isLoading ? null : _register,
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryGreen,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 3,
                     ),
                     child:
                         _isLoading
@@ -371,15 +484,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('¿Ya tienes cuenta? '),
+                      Text(
+                        '¿Ya tienes cuenta? ',
+                        style: TextStyle(color: primaryGreen.withOpacity(0.7)),
+                      ),
                       TextButton(
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        child: const Text('Inicia Sesión'),
+                        child: Text(
+                          'Inicia Sesión',
+                          style: TextStyle(
+                            color: primaryOrange,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ),
+
+                  const SizedBox(height: 20),
                 ],
               ),
             ),

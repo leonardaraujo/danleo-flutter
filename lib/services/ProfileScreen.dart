@@ -21,6 +21,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? telefono;
   bool isUploading = false;
 
+  // Colores de la empresa
+  static const Color primaryGreen = Color(0xFF00443F);
+  static const Color primaryOrange = Color(0xFFFF7B00);
+  static const Color secondaryCream = Color(0xFFF6E4D6);
+  static const Color secondaryRed = Color(0xFFB10000);
+
   final picker = ImagePicker();
 
   @override
@@ -57,26 +63,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // Función para comprimir la imagen
+  void _mostrarOpcionesImagen() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 50,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Seleccionar imagen',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: primaryGreen,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildImageOption(
+                    icon: Icons.camera_alt,
+                    label: 'Cámara',
+                    onTap: () {
+                      Navigator.pop(context);
+                      seleccionarImagen(ImageSource.camera);
+                    },
+                  ),
+                  _buildImageOption(
+                    icon: Icons.photo_library,
+                    label: 'Galería',
+                    onTap: () {
+                      Navigator.pop(context);
+                      seleccionarImagen(ImageSource.gallery);
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildImageOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: primaryOrange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: primaryOrange.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 40, color: primaryOrange),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: primaryGreen,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<String> _compressImage(File imageFile) async {
     final bytes = await imageFile.readAsBytes();
     
-    // Decodificar la imagen
     img.Image? image = img.decodeImage(bytes);
     if (image == null) throw Exception('No se pudo procesar la imagen');
 
-    // Redimensionar si es muy grande (máximo 300x300)
     if (image.width > 300 || image.height > 300) {
       image = img.copyResize(image, width: 300, height: 300);
     }
 
-    // Comprimir como JPEG con calidad del 70%
     final compressedBytes = img.encodeJpg(image, quality: 70);
-    
-    // Convertir a Base64
     final base64Image = base64Encode(compressedBytes);
     
-    // Verificar tamaño (no debe exceder ~700KB en Base64)
     if (base64Image.length > 700000) {
       throw Exception('La imagen es demasiado grande. Selecciona una imagen más pequeña.');
     }
@@ -93,7 +188,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // Comprimir la imagen
       final base64Image = await _compressImage(imagenSeleccionada!);
 
       final docRef = FirebaseFirestore.instance.collection('usuarios').doc(user.uid);
@@ -123,16 +217,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Imagen de perfil actualizada exitosamente'),
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
+              const Text('Imagen actualizada exitosamente'),
             ],
           ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          backgroundColor: primaryGreen,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     } catch (e) {
@@ -150,8 +246,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Expanded(child: Text('Error: ${e.toString()}')),
             ],
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: secondaryRed,
           duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -174,83 +272,332 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi Perfil')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 70,
-                  backgroundImage: imageWidget,
-                  child: imageWidget == null
-                      ? const Icon(Icons.person, size: 70)
-                      : null,
+      backgroundColor: secondaryCream,
+      body: Column(
+        children: [
+          // Header con degradado
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [primaryGreen, primaryGreen.withOpacity(0.8)],
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryGreen.withOpacity(0.3),
+                  spreadRadius: 2,
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
-                if (isUploading)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
-            const SizedBox(height: 10),
-            if (isUploading)
-              const Text(
-                'Comprimiendo y guardando imagen...',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.blue,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Mi Perfil',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          'Gestiona tu información personal',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            const SizedBox(height: 10),
-            if (nombre != null)
-              Text('Nombre: $nombre', style: const TextStyle(fontSize: 16)),
-            if (user?.email != null)
-              Text('Email: ${user!.email}', style: const TextStyle(fontSize: 16)),
-            if (telefono != null)
-              Text('Teléfono: $telefono', style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: isUploading ? null : () => seleccionarImagen(ImageSource.gallery),
-              icon: const Icon(Icons.image),
-              label: const Text("Desde galería"),
             ),
-            ElevatedButton.icon(
-              onPressed: isUploading ? null : () => seleccionarImagen(ImageSource.camera),
-              icon: const Icon(Icons.camera_alt),
-              label: const Text("Desde cámara"),
-            ),
-            if (imagenSeleccionada != null)
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                onPressed: isUploading ? null : subirImagen,
-                icon: isUploading 
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+
+          // Contenido principal
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // Sección de foto de perfil
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
                         ),
-                      )
-                    : const Icon(Icons.check),
-                label: Text(isUploading ? "Guardando..." : "Guardar imagen"),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Foto de Perfil',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: primaryGreen,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: primaryOrange,
+                                  width: 4,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primaryOrange.withOpacity(0.3),
+                                    spreadRadius: 2,
+                                    blurRadius: 8,
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: 70,
+                                backgroundColor: secondaryCream,
+                                backgroundImage: imageWidget,
+                                child: imageWidget == null
+                                    ? Icon(
+                                        Icons.person,
+                                        size: 70,
+                                        color: primaryGreen.withOpacity(0.5),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            if (isUploading)
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            Positioned(
+                              bottom: 5,
+                              right: 5,
+                              child: InkWell(
+                                onTap: isUploading ? null : _mostrarOpcionesImagen,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: primaryOrange,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        spreadRadius: 1,
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (isUploading) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            'Comprimiendo y guardando imagen...',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontStyle: FontStyle.italic,
+                              color: primaryOrange,
+                            ),
+                          ),
+                        ],
+                        if (imagenSeleccionada != null) ...[
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryGreen,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: isUploading ? null : subirImagen,
+                              icon: isUploading 
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Icon(Icons.check),
+                              label: Text(
+                                isUploading ? "Guardando..." : "Guardar imagen",
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Sección de información personal
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Información Personal',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: primaryGreen,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildInfoRow(
+                          icon: Icons.person_outline,
+                          label: 'Nombre',
+                          value: nombre ?? 'No disponible',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildInfoRow(
+                          icon: Icons.email_outlined,
+                          label: 'Email',
+                          value: user?.email ?? 'No disponible',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildInfoRow(
+                          icon: Icons.phone_outlined,
+                          label: 'Teléfono',
+                          value: telefono ?? 'No registrado',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
               ),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: primaryOrange.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            color: primaryOrange,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: primaryGreen.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: primaryGreen,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
