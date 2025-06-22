@@ -170,7 +170,6 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_getTitleByIndex(_selectedIndex)),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
