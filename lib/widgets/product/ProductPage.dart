@@ -6,6 +6,46 @@ class ProductPage extends StatelessWidget {
 
   const ProductPage({super.key, required this.product});
 
+  Widget _buildCategoryChips(List<dynamic>? categories) {
+    if (categories == null || categories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Categorías',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: categories.map((category) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.orange.shade300),
+              ),
+              child: Text(
+                category.toString().toUpperCase(),
+                style: TextStyle(
+                  color: Colors.orange.shade800,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,28 +109,10 @@ class ProductPage extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
-
-                  // Valoración
-                  Row(
-                    children: [
-                      ...List.generate(
-                        5,
-                        (index) => Icon(
-                          index < 4 ? Icons.star : Icons.star_half,
-                          color: Colors.amber,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '4.5 (128 reseñas)',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                      ),
-                    ],
-                  ),
-
                   const SizedBox(height: 20),
+
+                  // Categorías
+                  _buildCategoryChips(product['categoria']),
 
                   // Descripción
                   const Text(

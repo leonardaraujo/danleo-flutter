@@ -7,6 +7,11 @@ class ProductCard extends StatelessWidget {
 
   const ProductCard({super.key, required this.product});
 
+  String _formatCategories(List<dynamic>? categories) {
+    if (categories == null || categories.isEmpty) return '';
+    return categories.map((c) => c.toString().toUpperCase()).join(' • ');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -86,7 +91,7 @@ class ProductCard extends StatelessWidget {
                   },
                   child: SizedBox(
                     width: double.infinity,
-                    height: 32, // Altura fija optimizada
+                    height: 32,
                     child: Text(
                       product['nombre'],
                       style: const TextStyle(
@@ -114,28 +119,18 @@ class ProductCard extends StatelessWidget {
 
                 const SizedBox(height: 4),
 
-                // Valoración con estrellas
+                // Categorías
                 SizedBox(
-                  height: 16, // Altura fija para las estrellas
-                  child: Row(
-                    children: [
-                      ...List.generate(
-                        5,
-                        (index) => Icon(
-                          index < 4 ? Icons.star : Icons.star_half,
-                          color: Colors.amber,
-                          size: 11,
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '(4.5)',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 9,
-                        ),
-                      ),
-                    ],
+                  height: 16,
+                  child: Text(
+                    _formatCategories(product['categoria']),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
 
@@ -144,7 +139,7 @@ class ProductCard extends StatelessWidget {
                 // Botón de agregar al carrito
                 SizedBox(
                   width: double.infinity,
-                  height: 30, // Altura optimizada
+                  height: 30,
                   child: ListenableBuilder(
                     listenable: CartService(),
                     builder: (context, child) {
