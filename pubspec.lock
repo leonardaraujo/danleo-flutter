@@ -246,6 +246,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_admin_scaffold:
+    dependency: "direct main"
+    description:
+      name: flutter_admin_scaffold
+      sha256: ac8dc3845de994f68995440da7f7f2ff2fb7386165bbe9d3a4c984424bd3aabc
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.0"
   flutter_launcher_icons:
     dependency: "direct main"
     description:

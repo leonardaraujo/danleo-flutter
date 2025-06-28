@@ -1,19 +1,46 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
 
+import 'package:danleo/firebase_options.dart'; // Asegúrate de que este archivo exista
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart'; // Para kIsWeb
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Para PlatformDispatcher.onError
+
+// Importa tus widgets y servicios
+import 'widgets/admin/admin_dashboard.dart';
+import 'widgets/common/splash_screen.dart';
+import 'widgets/auth/login_screen.dart';
+import 'services/AuthService.dart';
+import 'widgets/store/purchase_history_screen.dart';
+import 'widgets/store/store_map_screen.dart';
 import 'widgets/product/productList.dart';
 import 'widgets/common/Sidebar.dart';
-import 'widgets/store/store_map_screen.dart';
-import 'widgets/store/purchase_history_screen.dart';
-import 'widgets/auth/login_screen.dart';
-import 'widgets/common/splash_screen.dart';
 import 'services/bottom_nav.dart';
-import 'services/AuthService.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Manejo global de errores
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    if (kReleaseMode) exit(1); // Salir si es modo release
+  };
+
+  // Maneja errores fuera del ciclo de vida de Flutter (como excepciones en callbacks)
+  PlatformDispatcher.instance.onError = (error, stack) {
+    print("Error no capturado: $error\n$stack");
+    return true; // Evita que la app falle
+  };
+
+  // Solo inicializa Firebase si es web
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+
   runApp(const MainApp());
 }
 
@@ -28,15 +55,19 @@ class MainApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: SplashScreen(
-        nextScreen: const AppInitializer(),
-        minimumDuration: const Duration(seconds: 3),
-      ),
+      home:
+          kIsWeb
+              ? const AdminDashboard()
+              : SplashScreen(
+                nextScreen: AppInitializer(),
+                minimumDuration: Duration(seconds: 3),
+              ),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
+// === AppInitializer ===
 class AppInitializer extends StatefulWidget {
   const AppInitializer({super.key});
 
@@ -69,14 +100,11 @@ class _AppInitializerState extends State<AppInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
+// === AuthWrapper ===
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({Key? key}) : super(key: key);
 
@@ -101,6 +129,7 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
+// === MainScreen ===
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -129,10 +158,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      // App en segundo plano: iniciar timer de cierre de sesión
       _startInactivityTimer();
     } else if (state == AppLifecycleState.resumed) {
-      // App vuelve a primer plano: cancelar timer
       _cancelInactivityTimer();
     }
   }
@@ -163,20 +190,21 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Future<void> _signOut() async {
     final shouldSignOut = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cerrar Sesión'),
-        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Cerrar Sesión'),
+            content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Cerrar Sesión'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cerrar Sesión'),
-          ),
-        ],
-      ),
     );
 
     if (shouldSignOut == true) {
@@ -227,6 +255,4 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       body: IndexedStack(index: _selectedIndex, children: screens),
     );
   }
-
-
 }
