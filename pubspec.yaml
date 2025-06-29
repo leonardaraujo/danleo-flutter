@@ -21,6 +21,7 @@ dependencies:
   country_picker: ^2.0.20
   flutter_launcher_icons: ^0.14.4
   flutter_admin_scaffold: 1.4.0
+  sensors_plus: ^4.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

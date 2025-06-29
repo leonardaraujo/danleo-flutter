@@ -76,6 +76,12 @@ class Sidebar extends StatelessWidget {
             title: 'Perfil',
             index: 3,
           ),
+          _buildMenuItem(
+            context: context,
+            icon: Icons.sensors,
+            title: 'Sensores',
+            index: 4,
+          ),
         ],
       ),
     );
