@@ -34,12 +34,10 @@ void main() async {
     return true; // Evita que la app falle
   };
 
-  // Solo inicializa Firebase si es web
-  if (kIsWeb) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
+  // Inicializa Firebase para ambas plataformas
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(const MainApp());
 }
@@ -55,56 +53,21 @@ class MainApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home:
-          kIsWeb
-              ? const AdminDashboard()
-              : SplashScreen(
-                nextScreen: AppInitializer(),
-                minimumDuration: Duration(seconds: 3),
-              ),
+      // ✅ AQUÍ ESTÁ EL CAMBIO PRINCIPAL:
+      // Si es WEB → AdminDashboard directo
+      // Si es ANDROID/iOS → App normal con splash, login, etc.
+      home: kIsWeb
+          ? const AdminDashboard()
+          : SplashScreen(
+              nextScreen: const AuthWrapper(),
+              minimumDuration: const Duration(seconds: 3),
+            ),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-// === AppInitializer ===
-class AppInitializer extends StatefulWidget {
-  const AppInitializer({super.key});
-
-  @override
-  State<AppInitializer> createState() => _AppInitializerState();
-}
-
-class _AppInitializerState extends State<AppInitializer> {
-  @override
-  void initState() {
-    super.initState();
-    _initializeApp();
-  }
-
-  Future<void> _initializeApp() async {
-    try {
-      await Firebase.initializeApp();
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const AuthWrapper()),
-        );
-      }
-    } catch (e) {
-      print('Error inicializando Firebase: $e');
-      await Future.delayed(const Duration(seconds: 2));
-      if (mounted) _initializeApp();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
-  }
-}
-
-// === AuthWrapper ===
+// === AuthWrapper (Solo para Android/iOS) ===
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({Key? key}) : super(key: key);
 
@@ -129,7 +92,7 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
-// === MainScreen ===
+// === MainScreen (Solo para Android/iOS) ===
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -190,21 +153,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Future<void> _signOut() async {
     final shouldSignOut = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Cerrar Sesión'),
-            content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Cerrar Sesión'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar Sesión'),
+        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
     );
 
     if (shouldSignOut == true) {
