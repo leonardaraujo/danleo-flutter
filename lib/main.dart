@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:danleo/firebase_options.dart'; // Asegúrate de que este archivo exista
+import 'package:danleo/widgets/sensors/sensors_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart'; // Para kIsWeb
 import 'package:flutter/material.dart';
@@ -198,6 +199,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       const StoreMapScreen(),
       const PurchaseHistoryScreen(),
       const BottomNavPerfilOnly(),
+      const TodosLosSensoresScreen(),
     ];
 
     return Scaffold(
