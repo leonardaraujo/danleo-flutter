@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:danleo/firebase_options.dart'; // Asegúrate de que este archivo exista
+import 'package:danleo/sensors_plus/sensors_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart'; // Para kIsWeb
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Para PlatformDispatcher.onError
-
+import 'package:sensors_plus/sensors_plus.dart';
 // Importa tus widgets y servicios
 import 'widgets/admin/admin_dashboard.dart';
 import 'widgets/common/splash_screen.dart';
@@ -198,6 +199,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       const StoreMapScreen(),
       const PurchaseHistoryScreen(),
       const BottomNavPerfilOnly(),
+      const TodosLosSensoresScreen(),
     ];
 
     return Scaffold(
@@ -213,6 +215,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       drawer: Sidebar(
         selectedIndex: _selectedIndex,
         onItemSelected: _onItemSelected,
+        onLogout: _signOut,
       ),
       body: IndexedStack(index: _selectedIndex, children: screens),
     );

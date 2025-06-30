@@ -4,11 +4,13 @@ import 'splash_image.dart'; // Importa el widget SplashImage
 class Sidebar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onItemSelected;
+  final VoidCallback onLogout;
 
   const Sidebar({
     super.key,
     required this.selectedIndex,
     required this.onItemSelected,
+    required this.onLogout,
   });
 
   @override
@@ -75,6 +77,21 @@ class Sidebar extends StatelessWidget {
             icon: Icons.person,
             title: 'Perfil',
             index: 3,
+          ),
+          _buildMenuItem(
+            context: context,
+            icon: Icons.sensors,
+            title: 'sensores',
+            index: 4,
+
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.grey),
+            title: const Text("Cerrar Sesion"),
+            onTap: (){
+              Navigator.pop(context);
+              onLogout();
+            },
           ),
         ],
       ),
