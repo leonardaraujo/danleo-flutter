@@ -857,6 +857,122 @@ class _ProductListState extends State<ProductList> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          String? genero = await showDialog<String>(
+            context: context,
+            builder: (context) {
+              return SimpleDialog(
+                title: const Text('Elige género'),
+                children: [
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, 'varon'),
+                    child: const Text('Varón'),
+                  ),
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, 'mujer'),
+                    child: const Text('Mujer'),
+                  ),
+                ],
+              );
+            },
+          );
+          if (genero == null) return;
+
+          String? prenda = await showDialog<String>(
+            context: context,
+            builder: (context) {
+              return SimpleDialog(
+                title: const Text('Elige tipo de prenda'),
+                children: [
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, 'pecho'),
+                    child: const Text('Pecho'),
+                  ),
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, 'pantalon'),
+                    child: const Text('Pantalón'),
+                  ),
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, 'casacas'),
+                    child: const Text('Casacas'),
+                  ),
+                ],
+              );
+            },
+          );
+          if (prenda == null) return;
+
+          final productos = await _productService.getProductsByCategories([prenda, genero]);
+          if (productos.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No hay productos para recomendar con esos filtros.')),
+            );
+            return;
+          }
+          productos.shuffle();
+          final seleccionados = productos.take(3).toList();
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Recomendaciones'),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  height: 400,
+                  child: ListView.builder(
+                    itemCount: seleccionados.length,
+                    itemBuilder: (context, index) {
+                      final product = seleccionados[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          leading: product['urlImagen'] != null
+                              ? Image.network(
+                                  product['urlImagen'],
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported),
+                                )
+                              : const Icon(Icons.image),
+                          title: Text(product['nombre'] ?? 'Producto'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(product['categoria'] != null ? (product['categoria'] as List).join(', ') : ''),
+                              Text('S/ ${product['precio']?.toStringAsFixed(2) ?? '--'}'),
+                              if (product['descripcion'] != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4.0),
+                                  child: Text(
+                                    product['descripcion'],
+                                    style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cerrar'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        icon: const Icon(Icons.recommend),
+        label: const Text('Recomendaciones'),
+        backgroundColor: primaryOrange,
+      ),
     );
   }
 }

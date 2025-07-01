@@ -452,4 +452,24 @@ class ProductService {
       return [];
     }
   }
+
+  // Obtener productos por categorías (sin paginación, todos)
+  Future<List<Map<String, dynamic>>> getProductsByCategories(List<String> categories) async {
+    try {
+      Query query = _productsCollection;
+      if (categories.isNotEmpty) {
+        List<String> lowerCaseFilters = categories.map((c) => c.toLowerCase()).toList();
+        query = query.where('categoria', arrayContainsAny: lowerCaseFilters);
+      }
+      QuerySnapshot querySnapshot = await query.get();
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      print('Error al obtener productos por categorías: $e');
+      return [];
+    }
+  }
 }
