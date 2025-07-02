@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/CartService.dart';
+import '../../services/ProductService.dart';
 
 class ProductPage extends StatelessWidget {
   final Map<String, dynamic> product;
@@ -188,78 +189,205 @@ class ProductPage extends StatelessWidget {
               final isInCart = cartService.isInCart(product['id']);
               final quantity = cartService.getQuantity(product['id']);
 
-              if (isInCart) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          cartService.addItem(product);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${product['nombre']} agregado al carrito',
-                              ),
-                              backgroundColor: Colors.green,
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'En carrito ($quantity)',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
+              return Row(
+                children: [
+                  // Botón Recomendar
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        String? genero = await showDialog<String>(
+                          context: context,
+                          builder: (context) {
+                            return SimpleDialog(
+                              title: const Text('Elige género'),
+                              children: [
+                                SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(context, 'varon'),
+                                  child: const Text('Varón'),
+                                ),
+                                SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(context, 'mujer'),
+                                  child: const Text('Mujer'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        if (genero == null) return;
 
-              return ElevatedButton(
-                onPressed: () {
-                  cartService.addItem(product);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${product['nombre']} agregado al carrito'),
-                      backgroundColor: Colors.green,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.shopping_cart, size: 24),
-                    SizedBox(width: 8),
-                    Text(
-                      'Agregar al Carrito',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        String? prenda = await showDialog<String>(
+                          context: context,
+                          builder: (context) {
+                            return SimpleDialog(
+                              title: const Text('Elige tipo de prenda'),
+                              children: [
+                                SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(context, 'pecho'),
+                                  child: const Text('Pecho'),
+                                ),
+                                SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(context, 'pantalon'),
+                                  child: const Text('Pantalón'),
+                                ),
+                                SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(context, 'casacas'),
+                                  child: const Text('Casacas'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        if (prenda == null) return;
+
+                        final productos = await ProductService().getProductsByCategories([prenda, genero]);
+                        if (productos.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('No hay productos para recomendar con esos filtros.')),
+                          );
+                          return;
+                        }
+                        productos.shuffle();
+                        final seleccionados = productos.take(3).toList();
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('Recomendaciones'),
+                              content: SizedBox(
+                                width: double.maxFinite,
+                                height: 400,
+                                child: ListView.builder(
+                                  itemCount: seleccionados.length,
+                                  itemBuilder: (context, index) {
+                                    final prod = seleccionados[index];
+                                    return Card(
+                                      margin: const EdgeInsets.symmetric(vertical: 8),
+                                      child: ListTile(
+                                        leading: prod['urlImagen'] != null
+                                            ? Image.network(
+                                                prod['urlImagen'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported),
+                                              )
+                                            : const Icon(Icons.image),
+                                        title: Text(prod['nombre'] ?? 'Producto'),
+                                        subtitle: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(prod['categoria'] != null ? (prod['categoria'] as List).join(', ') : ''),
+                                            Text('S/ ${prod['precio']?.toStringAsFixed(2) ?? '--'}'),
+                                            if (prod['descripcion'] != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 4.0),
+                                                child: Text(
+                                                  prod['descripcion'],
+                                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                                  maxLines: 3,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cerrar'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.recommend, size: 20),
+                      label: const Text('Recomendar', style: TextStyle(fontSize: 14)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Botón Agregar al Carrito
+                  Expanded(
+                    child: isInCart
+                        ? ElevatedButton(
+                            onPressed: () {
+                              cartService.addItem(product);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '${product['nombre']} agregado al carrito',
+                                  ),
+                                  backgroundColor: Colors.green,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'En carrito ($quantity)',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : ElevatedButton(
+                            onPressed: () {
+                              cartService.addItem(product);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${product['nombre']} agregado al carrito'),
+                                  backgroundColor: Colors.green,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.shopping_cart, size: 24),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Agregar al Carrito',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ],
               );
             },
           ),

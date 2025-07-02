@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'ProductPage.dart';
 import '../../services/CartService.dart';
+import '../../services/ProductService.dart';
 
 class ProductCard extends StatelessWidget {
   final Map<String, dynamic> product;
@@ -136,82 +137,24 @@ class ProductCard extends StatelessWidget {
 
                 const SizedBox(height: 6),
 
+                // Descripción del producto
+                if (product['descripcion'] != null && product['descripcion'].toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6.0),
+                    child: Text(
+                      product['descripcion'],
+                      style: const TextStyle(fontSize: 11, color: Colors.black87),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 // Botón de agregar al carrito
-                SizedBox(
-                  width: double.infinity,
-                  height: 30,
-                  child: ListenableBuilder(
-                    listenable: CartService(),
-                    builder: (context, child) {
-                      final cartService = CartService();
-                      final isInCart = cartService.isInCart(product['id']);
-                      final quantity = cartService.getQuantity(product['id']);
-
-                      if (isInCart) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.green.shade300, width: 0.5),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  cartService.decreaseQuantity(product['id']);
-                                },
-                                child: Container(
-                                  width: 30,
-                                  height: 30,
-                                  child: const Icon(
-                                    Icons.remove,
-                                    size: 14,
-                                  ),
-                                ),
-                              ),
-                              
-                              Expanded(
-                                child: Text(
-                                  quantity.toString(),
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ),
-                              
-                              InkWell(
-                                onTap: () {
-                                  cartService.addItem(product);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '${product['nombre']} agregado',
-                                        style: const TextStyle(fontSize: 11),
-                                      ),
-                                      backgroundColor: Colors.green,
-                                      duration: const Duration(milliseconds: 600),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  width: 30,
-                                  height: 30,
-                                  child: const Icon(
-                                    Icons.add,
-                                    size: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return ElevatedButton.icon(
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
                         onPressed: () {
+                          final cartService = CartService();
                           cartService.addItem(product);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -224,14 +167,8 @@ class ProductCard extends StatelessWidget {
                             ),
                           );
                         },
-                        icon: const Icon(
-                          Icons.add_shopping_cart,
-                          size: 12,
-                        ),
-                        label: const Text(
-                          'Agregar',
-                          style: TextStyle(fontSize: 10),
-                        ),
+                        icon: const Icon(Icons.add_shopping_cart, size: 12),
+                        label: const Text('Agregar', style: TextStyle(fontSize: 10)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(context).primaryColor,
                           foregroundColor: Colors.white,
@@ -243,9 +180,9 @@ class ProductCard extends StatelessWidget {
                           minimumSize: const Size(0, 30),
                           maximumSize: const Size(double.infinity, 30),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
