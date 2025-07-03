@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
 import '../../services/CartService.dart';
+import '../../services/ProductService.dart';
+import 'ProductPage.dart'; // o ajusta si está en otro archivo
 
 class ProductPage extends StatelessWidget {
   final Map<String, dynamic> product;
 
   const ProductPage({super.key, required this.product});
 
-  Widget _buildCategoryChips(List<dynamic>? categories) {
-    if (categories == null || categories.isEmpty) {
-      return const SizedBox.shrink();
+  Future<List<Map<String, dynamic>>> _fetchRecommendations() async {
+    try {
+      final ProductService productService = ProductService();
+      List<Map<String, dynamic>> recommendations = await productService.getRecommendations(product['categoria'][0]);
+
+      return recommendations.where((p) => p['id'] != product['id']).toList();
+    } catch (e) {
+      print('Error al obtener recomendaciones: $e');
+      return [];
     }
+  }
+
+  Widget _buildCategoryChips(List<dynamic>? categories) {
+    if (categories == null || categories.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Categorías',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        const Text('Categorías', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -46,6 +55,77 @@ class ProductPage extends StatelessWidget {
     );
   }
 
+  Widget _buildRecommendationList(List<Map<String, dynamic>> products, BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Productos similares', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 200,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              final p = products[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => ProductPage(product: p)),
+                  );
+                },
+                child: Container(
+                  width: 150,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        height: 100,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                          color: Colors.grey[100],
+                        ),
+                        child: Image.network(
+                          p['urlImagen'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 40),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              p['nombre'],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'S/.${p['precio'].toStringAsFixed(2)}',
+                              style: TextStyle(color: Colors.green.shade700),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        )
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,7 +139,7 @@ class ProductPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Imagen del producto
+            // Imagen
             Container(
               height: 300,
               width: double.infinity,
@@ -67,73 +147,31 @@ class ProductPage extends StatelessWidget {
               child: Image.network(
                 product['urlImagen'],
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[300],
-                    child: const Center(
-                      child: Icon(
-                        Icons.broken_image,
-                        size: 60,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  );
-                },
+                errorBuilder: (context, error, stackTrace) => const Center(
+                  child: Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                ),
               ),
             ),
-
-            // Información del producto
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Nombre del producto
-                  Text(
-                    product['nombre'],
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
+                  Text(product['nombre'], style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-
-                  // Precio
                   Text(
                     'S/.${product['precio'].toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade700,
-                    ),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green.shade700),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Categorías
                   _buildCategoryChips(product['categoria']),
-
-                  // Descripción
-                  const Text(
-                    'Descripción',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-
+                  const Text('Descripción', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-
                   Text(
                     product['descripcion'],
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                      height: 1.5,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[700], height: 1.5),
                   ),
-
                   const SizedBox(height: 30),
-
-                  // Información adicional
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -144,13 +182,7 @@ class ProductPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Información del producto',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        const Text('Información del producto', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 12),
                         _buildInfoRow('Disponibilidad', 'En stock'),
                         _buildInfoRow('Envío', 'Gratis'),
@@ -159,11 +191,24 @@ class ProductPage extends StatelessWidget {
                       ],
                     ),
                   ),
-
+                  const SizedBox(height: 20),
+                  // Recomendaciones
+                  FutureBuilder(
+                    future: _fetchRecommendations(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                        return _buildRecommendationList(snapshot.data!, context);
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    },
+                  ),
                   const SizedBox(height: 100),
                 ],
               ),
-            ),
+            )
           ],
         ),
       ),
@@ -197,9 +242,7 @@ class ProductPage extends StatelessWidget {
                           cartService.addItem(product);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                '${product['nombre']} agregado al carrito',
-                              ),
+                              content: Text('${product['nombre']} agregado al carrito'),
                               backgroundColor: Colors.green,
                               duration: const Duration(seconds: 2),
                             ),
@@ -215,10 +258,7 @@ class ProductPage extends StatelessWidget {
                         ),
                         child: Text(
                           'En carrito ($quantity)',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -253,10 +293,7 @@ class ProductPage extends StatelessWidget {
                     SizedBox(width: 8),
                     Text(
                       'Agregar al Carrito',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -275,10 +312,7 @@ class ProductPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-          ),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
         ],
       ),
     );

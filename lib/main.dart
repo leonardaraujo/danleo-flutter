@@ -20,6 +20,7 @@ import 'widgets/common/Sidebar.dart';
 import 'services/bottom_nav.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
