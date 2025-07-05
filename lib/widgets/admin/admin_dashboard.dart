@@ -5,6 +5,7 @@ import 'package:flutter_admin_scaffold/admin_scaffold.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../services/AuthService.dart';
 
 import '../../services/ProductService.dart';
 import 'orders_report.dart';
@@ -25,6 +26,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   String? _editingId;
   File? _pickedImage;
   final ImagePicker _picker = ImagePicker();
+
+  final AuthService _authService = AuthService();
 
   final ProductService _productService = ProductService();
 
@@ -52,6 +55,41 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _editingId = null;
     _pickedImage = null;
     setState(() {});
+  }
+
+  Future<void> _signOut() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar Sesión'),
+        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _authService.signOut();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al cerrar sesión: $e'),
+              backgroundColor: secondaryRed,
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _guardarProducto() async {
@@ -91,15 +129,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     try {
       if (_editingId == null) {
-        await _productService.createProduct(
+        final result = await _productService.createProduct(
           nombre,
           precio,
           descripcion,
           urlImagen,
           categorias,
         );
+        if (result.startsWith('Error')) {
+          throw result;
+        }
       } else {
-        await _productService.updateProduct(
+        final success = await _productService.updateProduct(
           _editingId!,
           nombre,
           precio,
@@ -107,6 +148,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           urlImagen,
           categorias,
         );
+        if (!success) {
+          throw 'No se pudo actualizar el producto';
+        }
       }
 
       _clearFields();
@@ -132,7 +176,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
-  void _editarProducto(Map<String, dynamic> data, String id) {
+  void _editarProducto(BuildContext ctx, Map<String, dynamic> data, String id) {
     _nombreController.text = data['nombre'] ?? '';
     _precioController.text = data['precio'].toString();
     _descripcionController.text = data['descripcion'] ?? '';
@@ -140,6 +184,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _selectedCategories = (data['categoria'] as List?)?.map((e) => e.toString()).toList() ?? [];
     _editingId = id;
     setState(() {});
+    DefaultTabController.of(ctx)?.animateTo(0);
   }
 
   void _eliminarProducto(String id) async {
@@ -772,7 +817,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   TextButton.icon(
-                                    onPressed: () => _editarProducto(data, doc.id),
+                                    onPressed: () => _editarProducto(context, data, doc.id),
                                     icon: Icon(Icons.edit, size: 18, color: primaryOrange),
                                     label: Text('Editar', style: TextStyle(color: primaryOrange)),
                                   ),
@@ -878,7 +923,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                   IconButton(
                                     icon: const Icon(Icons.edit, size: 20),
                                     color: primaryOrange,
-                                    onPressed: () => _editarProducto(data, doc.id),
+                                    onPressed: () => _editarProducto(context, data, doc.id),
                                     tooltip: 'Editar producto',
                                   ),
                                   IconButton(
@@ -933,6 +978,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Cerrar sesión',
+              onPressed: _signOut,
+            ),
+          ],
           backgroundColor: primaryGreen,
           foregroundColor: Colors.white,
           elevation: 0,
@@ -1007,6 +1059,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Cerrar sesión',
+              onPressed: _signOut,
+            ),
+          ],
           backgroundColor: primaryGreen,
           foregroundColor: Colors.white,
           elevation: 0,
