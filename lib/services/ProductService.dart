@@ -116,6 +116,54 @@ class ProductService {
     }
   }
 
+  // Actualizar un producto
+  Future<void> updateProduct(
+    String productId,
+    String name,
+    double price,
+    String description,
+    String urlImage,
+    List<String> categories,
+  ) async {
+    try {
+      // Validar los datos primero
+      String? validationError = validateProduct(
+        name,
+        price,
+        description,
+        urlImage,
+        categories,
+      );
+      if (validationError != null) {
+        throw Exception('Error de validación: $validationError');
+      }
+
+      // Actualizar el documento con los datos validados
+      await _productsCollection.doc(productId).update({
+        'nombre': name.trim(),
+        'precio': price,
+        'descripcion': description.trim(),
+        'urlImagen': urlImage.trim(),
+        'categoria': categories.map((c) => c.toLowerCase()).toList(),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error al actualizar producto: $e');
+      throw Exception('Error al actualizar producto: $e');
+    }
+  }
+
+  // Eliminar un producto
+  Future<void> deleteProduct(String productId) async {
+    try {
+      await _productsCollection.doc(productId).delete();
+      print('Producto eliminado correctamente: $productId');
+    } catch (e) {
+      print('Error al eliminar producto: $e');
+      throw Exception('Error al eliminar producto: $e');
+    }
+  }
+
   // Obtener productos con paginación y filtros
   Future<List<Map<String, dynamic>>> getProductsPaginated(
     int page,
@@ -259,171 +307,6 @@ class ProductService {
     _lastDocument = null;
   }
 
-  // Obtener todos los productos (mantener para compatibilidad)
-  Future<List<Map<String, dynamic>>> getProducts() async {
-    try {
-      QuerySnapshot querySnapshot =
-          await _productsCollection
-              .orderBy('createdAt', descending: true)
-              .get();
-
-      return querySnapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        return data;
-      }).toList();
-    } catch (e) {
-      print('Error al obtener productos: $e');
-      return [];
-    }
-  }
-
-  // Buscar productos por nombre y categorías
-  Future<List<Map<String, dynamic>>> searchProducts(
-    String searchTerm, {
-    List<String>? categoryFilter,
-  }) async {
-    try {
-      Query query = _productsCollection;
-
-      // Si hay filtro de categorías, aplicarlo SIN orderBy
-      if (categoryFilter != null && categoryFilter.isNotEmpty) {
-        query = query.where(
-          'categoria',
-          arrayContainsAny: categoryFilter.map((c) => c.toLowerCase()).toList(),
-        );
-
-        QuerySnapshot querySnapshot = await query.get();
-
-        List<Map<String, dynamic>> allProducts =
-            querySnapshot.docs.map((doc) {
-              Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-              data['id'] = doc.id;
-              return data;
-            }).toList();
-
-        // Ordenar por fecha de creación localmente
-        allProducts.sort((a, b) {
-          Timestamp? aTime = a['createdAt'] as Timestamp?;
-          Timestamp? bTime = b['createdAt'] as Timestamp?;
-
-          if (aTime == null && bTime == null) return 0;
-          if (aTime == null) return 1;
-          if (bTime == null) return -1;
-
-          return bTime.compareTo(aTime);
-        });
-
-        // Filtrar por nombre si hay término de búsqueda
-        if (searchTerm.isNotEmpty) {
-          String searchLower = searchTerm.toLowerCase();
-          allProducts =
-              allProducts.where((product) {
-                String name = product['nombre']?.toString().toLowerCase() ?? '';
-                return name.contains(searchLower);
-              }).toList();
-        }
-
-        return allProducts;
-      } else {
-        // Si no hay filtro de categorías, usar orderBy normal
-        query = query.orderBy('createdAt', descending: true);
-
-        QuerySnapshot querySnapshot = await query.get();
-
-        List<Map<String, dynamic>> allProducts =
-            querySnapshot.docs.map((doc) {
-              Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-              data['id'] = doc.id;
-              return data;
-            }).toList();
-
-        // Filtrar por nombre si hay término de búsqueda
-        if (searchTerm.isNotEmpty) {
-          String searchLower = searchTerm.toLowerCase();
-          allProducts =
-              allProducts.where((product) {
-                String name = product['nombre']?.toString().toLowerCase() ?? '';
-                return name.contains(searchLower);
-              }).toList();
-        }
-
-        return allProducts;
-      }
-    } catch (e) {
-      print('Error al buscar productos: $e');
-      return [];
-    }
-  }
-
-  // Obtener un producto por ID
-  Future<Map<String, dynamic>?> getProductById(String id) async {
-    try {
-      DocumentSnapshot doc = await _productsCollection.doc(id).get();
-
-      if (doc.exists) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        return data;
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print('Error al obtener producto: $e');
-      return null;
-    }
-  }
-
-  // Actualizar un producto
-  Future<bool> updateProduct(
-    String id,
-    String name,
-    double price,
-    String description,
-    String urlImage,
-    List<String> categories,
-  ) async {
-    try {
-      // Validar los datos primero
-      String? validationError = validateProduct(
-        name,
-        price,
-        description,
-        urlImage,
-        categories,
-      );
-      if (validationError != null) {
-        print('Error de validación: $validationError');
-        return false;
-      }
-
-      await _productsCollection.doc(id).update({
-        'nombre': name.trim(),
-        'precio': price,
-        'descripcion': description.trim(),
-        'urlImagen': urlImage.trim(),
-        'categoria': categories.map((c) => c.toLowerCase()).toList(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      return true;
-    } catch (e) {
-      print('Error al actualizar producto: $e');
-      return false;
-    }
-  }
-
-  // Eliminar un producto
-  Future<bool> deleteProduct(String id) async {
-    try {
-      await _productsCollection.doc(id).delete();
-      return true;
-    } catch (e) {
-      print('Error al eliminar producto: $e');
-      return false;
-    }
-  }
-
   // Obtener todas las categorías disponibles
   List<String> getAvailableCategories() {
     return List.from(availableCategories);
@@ -449,6 +332,27 @@ class ProductService {
       return categories.toList();
     } catch (e) {
       print('❌ Error al obtener categorías usadas: $e');
+      return [];
+    }
+  }
+
+  // Obtener recomendaciones de productos similares
+  Future<List<Map<String, dynamic>>> getRecommendations(String category) async {
+    try {
+      Query query = _productsCollection.where(
+        'categoria',
+        arrayContains: category.toLowerCase(),
+      );
+
+      QuerySnapshot querySnapshot = await query.get();
+
+      return querySnapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id; // Agregar el ID del documento
+        return data;
+      }).toList();
+    } catch (e) {
+      print('❌ Error al obtener recomendaciones: $e');
       return [];
     }
   }
