@@ -84,6 +84,10 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (snapshot.hasData && snapshot.data != null) {
+          final user = snapshot.data!;
+          if (user.email == 'fabricio99cv@gmail.com') {
+            return const AdminDashboard();
+          }
           return const MainScreen();
         }
 
